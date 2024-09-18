@@ -1,4 +1,4 @@
-﻿namespace Mango.Web.Models
+﻿namespace Mango.ProductAPI.Models.Dto
 {
     public class ResponseDto
     {
@@ -7,4 +7,3 @@
         public string Message { get; set; } = "";
     }
 }
-

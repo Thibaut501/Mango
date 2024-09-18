@@ -22,7 +22,7 @@ namespace Mango.Web.Controllers
             }
             else
             {
-                TempData["error"] = response?.Message;
+                TempData["error"] = response.Message;
             }
 
             return View(list);
