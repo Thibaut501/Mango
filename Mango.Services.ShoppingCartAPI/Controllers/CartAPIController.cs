@@ -22,6 +22,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             IMapper mapper, IProductService productService)
         {
             _db = db;
+            _productService = productService;
             this._response = new ResponseDto();
             _mapper = mapper;
         }
