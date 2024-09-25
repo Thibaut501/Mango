@@ -62,7 +62,7 @@ namespace Mango.Services.CouponAPI.Migrations
                             MinAmount = 40
                         });
                 });
-#pragma warning restore 612, 618
+
         }
     }
 }
