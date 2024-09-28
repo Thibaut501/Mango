@@ -59,7 +59,8 @@ builder.Services.AddSwaggerGen(option =>
             }, new string[]{}
         }
     });
-});
+})
+    ;
 
 
 
