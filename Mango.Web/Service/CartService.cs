@@ -4,61 +4,58 @@ using Mango.Web.Utility;
 
 namespace Mango.Web.Service
 {
-
-    
-        public class CartService : ICartService
+    public class CartService : ICartService
+    {
+        private readonly IBaseService _baseService;
+        public CartService(IBaseService baseService)
         {
-            // Dependency Injection of IBaseService to handle the actual API requests
-            private readonly IBaseService _baseService;
+            _baseService = baseService;
+        }
 
-            public CartService(IBaseService baseService)
+        public async Task<ResponseDto?> ApplyCouponAsync(CartDto cartDto)
+        {
+            return await _baseService.SendAsync(new RequestDto()
             {
-                _baseService = baseService;
-            }
-
-            // Apply Coupon to Cart
-            public async Task<ResponseDto?> ApplyCouponAsync(CartDto cartDto)
+                ApiType = SD.ApiType.POST,
+                Data = cartDto,
+                Url = SD.ShoppingCartAPIBase + "/api/cart/ApplyCoupon"
+            });
+        }
+        public async Task<ResponseDto?> GetCartByUserIdAsnyc(string userId)
+        {
+            var response = await _baseService.SendAsync(new RequestDto()
             {
-                return await _baseService.SendAsync(new RequestDto()
-                {
-                    ApiType = SD.ApiType.POST,
-                    Data = cartDto,
-                    Url = SD.ShoppingCartAPIBase + "/api/cart/ApplyCoupon"
-                });
-            }
+                ApiType = SD.ApiType.GET,
+                Url = SD.ShoppingCartAPIBase + "/api/cart/GetCart/" + userId
+            });
 
-            // Get Cart By User ID
-            public async Task<ResponseDto?> GetCartByUserIdAsnyc(string userId)
+            // Log the API response for debugging
+            Console.WriteLine($"Service Layer Response: {response?.Result}");
+
+            return response;
+        }
+
+
+
+        public async Task<ResponseDto?> RemoveFromCartAsync(int cartDetailsId)
+        {
+            return await _baseService.SendAsync(new RequestDto()
             {
-                return await _baseService.SendAsync(new RequestDto()
-                {
+                ApiType = SD.ApiType.POST,
+                Data = cartDetailsId,
+                Url = SD.ShoppingCartAPIBase + "/api/cart/RemoveCart"
+            });
+        }
 
-                    ApiType = SD.ApiType.GET,
 
-                    Url = SD.ShoppingCartAPIBase + "/api/cart/GetCart/" + userId
-                });
-            }
-
-            // Remove Item from Cart
-            public async Task<ResponseDto?> RemoveFromCartAsync(int cartDetailsId)
+        public async Task<ResponseDto?> UpsertCartAsync(CartDto cartDto)
+        {
+            return await _baseService.SendAsync(new RequestDto()
             {
-                return await _baseService.SendAsync(new RequestDto()
-                {
-                    ApiType = SD.ApiType.POST,
-                    Data = cartDetailsId,
-                    Url = SD.ShoppingCartAPIBase + "/api/cart/RemoveCart"
-                });
-            }
-
-            // Add/Update Cart Items
-            public async Task<ResponseDto?> UpsertCartAsync(CartDto cartDto)
-            {
-                return await _baseService.SendAsync(new RequestDto()
-                {
-                    ApiType = SD.ApiType.POST,
-                    Data = cartDto,
-                    Url = SD.ShoppingCartAPIBase + "/api/cart/CartUpsert"
-                });
-            }
+                ApiType = SD.ApiType.POST,
+                Data = cartDto,
+                Url = SD.ShoppingCartAPIBase + "/api/cart/CartUpsert"
+            });
         }
     }
+}
