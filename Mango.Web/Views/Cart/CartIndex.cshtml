@@ -57,13 +57,13 @@
                             {
                                 <span>Coupon:</span>
                                 <input asp-for="CartHeader.CouponCode" />
-                                <button type="submit" asp-action="ApplyCoupon" class="btn btn-sm btn-success">Apply</button>
+                                <button type="submit" asp-action="ApplyCoupon" asp-route-cartDto="@Model" class="btn btn-sm btn-success">Apply</button>
                             }
                             else
                             {
                                 <span>Coupon:</span>
                                 <input asp-for="CartHeader.CouponCode" disabled />
-                                <button type="submit" asp-action="RemoveCoupon" class="btn btn-sm btn-success">Remove</button>
+                                <button type="submit" asp-action="Remove Coupon" asp-route-cartDto="@Model" class="btn btn-sm btn-success">Remove</button>
                             }
                         </div>
                         <div class="col-6 text-end">
