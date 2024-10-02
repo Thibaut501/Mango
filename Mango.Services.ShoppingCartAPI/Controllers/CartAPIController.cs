@@ -49,14 +49,14 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                     cart.CartHeader.CartTotal += (item.Count * item.Product.Price);
                 }
 
-                //apply cpoupon if any
-                if (!string.IsNullOrEmpty(cart.CartHeader.CouponCode)) 
-                { 
-                  CouponDto coupon = await _couponService.GetCoupon(cart.CartHeader.CouponCode);
-                    if(coupon!= null && cart.CartHeader.CartTotal > coupon.MinAmount)
+                //apply coupon if any
+                if (!string.IsNullOrEmpty(cart.CartHeader.CouponCode))
+                {
+                    CouponDto coupon = await _couponService.GetCoupon(cart.CartHeader.CouponCode);
+                    if (coupon != null && cart.CartHeader.CartTotal > coupon.MinAmount)
                     {
                         cart.CartHeader.CartTotal -= coupon.DiscountAmount;
-                        cart.CartHeader.Discount=coupon.DiscountAmount;
+                        cart.CartHeader.Discount = coupon.DiscountAmount;
                     }
                 }
                 _response.Result = cart;
@@ -152,7 +152,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         {
             try
             {
-                CartDetails cartDetails =  _db.CartDetails
+                CartDetails cartDetails = _db.CartDetails
                    .First(u => u.CartDetailsId == cartDetailsId);
 
                 int totalCountofCartItem = _db.CartDetails.Where(u => u.CartHeaderId == cartDetails.CartHeaderId).Count();
@@ -178,6 +178,3 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
 
     }
 }
-
-
-
