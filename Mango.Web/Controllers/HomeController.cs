@@ -40,7 +40,7 @@ namespace Mango.Web.Controllers
         {
             ProductDto? model = new();
             ResponseDto? response = await _productService.GetProductByIdAsync(productId);
-            if (response != null && response.IsSuccess)
+            if (response != null & response.IsSuccess)
             {
                 model = JsonConvert.DeserializeObject<ProductDto>(Convert.ToString(response.Result));
             }

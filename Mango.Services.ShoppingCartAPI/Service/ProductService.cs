@@ -10,9 +10,9 @@ namespace Mango.Services.ShoppingCartAPI.Service
     {
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public ProductService(IHttpClientFactory httpClientFactory)
+        public ProductService(IHttpClientFactory ClientFactory)
         {
-            _httpClientFactory = httpClientFactory;
+            _httpClientFactory = ClientFactory;
         }
         public async Task<IEnumerable<ProductDto>> GetProducts()
         {
@@ -20,7 +20,7 @@ namespace Mango.Services.ShoppingCartAPI.Service
             var response = await client.GetAsync($"/api/product");
             var apiContet = await response.Content.ReadAsStringAsync();
             var resp = JsonConvert.DeserializeObject<ResponseDto>(apiContet);
-            if (resp.IsSuccess)
+            if (resp!=null && resp.IsSuccess)
             {
                 return JsonConvert.DeserializeObject<IEnumerable<ProductDto>>(Convert.ToString(resp.Result));
             }

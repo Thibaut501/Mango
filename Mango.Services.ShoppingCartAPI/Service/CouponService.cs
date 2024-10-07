@@ -8,9 +8,9 @@ namespace Mango.Services.ShoppingCartAPI.Service
     {
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public CouponService(IHttpClientFactory httpClientFactory)
+        public CouponService(IHttpClientFactory ClientFactory)
         {
-            _httpClientFactory = httpClientFactory;
+            _httpClientFactory = ClientFactory;
         }
 
         public async Task<CouponDto> GetCoupon(string couponCode)

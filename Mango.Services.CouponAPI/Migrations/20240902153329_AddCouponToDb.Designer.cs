@@ -46,7 +46,7 @@ namespace Mango.Services.CouponAPI.Migrations
 
                     b.ToTable("Coupons");
                 });
-#pragma warning restore 612, 618
+
         }
     }
 }
