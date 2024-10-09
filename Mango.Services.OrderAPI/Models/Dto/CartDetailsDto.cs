@@ -1,6 +1,8 @@
 ﻿
-namespace Mango.Services.OrderAPI.Dto
-{
+
+
+using Mango.Services.OrderAPI.Models.Dto;
+
     public class CartDetailsDto
     {
         
@@ -11,4 +13,4 @@ namespace Mango.Services.OrderAPI.Dto
         public ProductDto? Product { get; set; }
         public int Count { get; set; }
     }
-}
+

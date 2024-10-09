@@ -1,7 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿
 
 
-namespace Mango.Services.OrderAPI.Dto
+namespace Mango.Services.OrderAPI.Models.Dto
 {
     public class CartHeaderDto
     {

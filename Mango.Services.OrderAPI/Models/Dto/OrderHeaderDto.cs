@@ -1,10 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿
 
 namespace Mango.Services.OrderAPI.Models.Dto
 {
     public class OrderHeaderDto
     {
-        [Key]
+        
         public int OrderHeaderId { get; set; }
         public string? UserId { get; set; }
         public string? CouponCode { get; set; }
