@@ -1,4 +1,6 @@
-﻿using Mango.Web.Models;
+﻿
+
+using Mango.Web.Models;
 using Mango.Web.Service;
 using Mango.Web.Service.IService;
 using Microsoft.AspNetCore.Authorization;
@@ -11,11 +13,13 @@ namespace Mango.Web.Controllers
     public class CartController : Controller
     {
         private readonly ICartService _cartService;
+
         private readonly IOrderService _orderService;
         public CartController(ICartService cartService, IOrderService orderService)
         {
             _cartService = cartService;
             _orderService = orderService;
+
         }
 
         [Authorize]
@@ -45,7 +49,11 @@ namespace Mango.Web.Controllers
             return View();
         }
 
-
+        [Authorize]
+        public async Task<IActionResult> Confirmation(int orderId)
+        {
+            return View(orderId);
+        }
         public async Task<IActionResult> Remove(int cartDetailsId)
         {
             var userId = User.Claims.Where(u => u.Type == JwtRegisteredClaimNames.Sub)?.FirstOrDefault()?.Value;
@@ -61,14 +69,17 @@ namespace Mango.Web.Controllers
         public async Task<IActionResult> ApplyCoupon(CartDto cartDto)
         {
 
+
             ResponseDto? response = await _cartService.ApplyCouponAsync(cartDto);
             if (response != null && response.IsSuccess)
             {
+
                 TempData["success"] = "Cart updated successfully";
                 return RedirectToAction(nameof(CartIndex));
             }
             return View();
         }
+
         [HttpPost]
         public async Task<IActionResult> RemoveCoupon(CartDto cartDto)
         {
@@ -89,8 +100,11 @@ namespace Mango.Web.Controllers
             if (response != null && response.IsSuccess)
             {
                 CartDto cartDto = JsonConvert.DeserializeObject<CartDto>(Convert.ToString(response.Result));
+
+
                 return cartDto;
             }
+
             return new CartDto();
         }
     }
