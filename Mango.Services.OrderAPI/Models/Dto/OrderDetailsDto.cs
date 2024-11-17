@@ -11,6 +11,6 @@ namespace Mango.Services.OrderAPI.Models.Dto
         public ProductDto? Product { get; set; }
         public int Count { get; set; }
         public string ProductName { get; set; }
-        public string Price { get; set; }
+        public int Price { get; set; }
     }
 }

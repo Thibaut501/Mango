@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 
 using Microsoft.OpenApi.Models;
+
 using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,7 +67,12 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+
+
 }
+Stripe.StripeConfiguration.ApiKey = builder.Configuration.GetSection("Stripe:SecretKey").Get<string>();
+
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
