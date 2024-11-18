@@ -9,7 +9,7 @@ namespace Mango.Services.OrderAPI.Models
         public string? UserId { get; set; }
         public string? CouponCode { get; set; }
         public double Discount { get; set; }
-        public double O5rderTotal { get; set; }
+        public double OrderTotal { get; set; }
 
 
         public string? Name { get; set; }
