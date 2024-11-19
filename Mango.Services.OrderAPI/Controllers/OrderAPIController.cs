@@ -69,7 +69,15 @@ namespace Mango.Services.OrderAPI.Controllers
                     CancelUrl = stripeRequestDto.CancelUrl,
                     LineItems = new List<SessionLineItemOptions>(),
                     Mode = "payment",
+                    Discounts = new List<SessionDiscountOptions>()
                 };
+                var Discount =new List<SessionDiscountOptions>()
+                {
+                    new SessionDiscountOptions
+                    {
+                        Coupon=stripeRequestDto.OrderHeader.CouponCode
+                    }
+                    };
                 foreach (var item in stripeRequestDto.OrderHeader.OrderDetails)
                 {
                     var sessionLineItem = new SessionLineItemOptions
