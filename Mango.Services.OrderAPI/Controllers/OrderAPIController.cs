@@ -87,6 +87,26 @@ namespace Mango.Services.OrderAPI.Controllers
                     };
                     options.LineItems.Add(sessionLineItem);
                 }
+                //Create and add coupons
+                if (!string.IsNullOrEmpty(stripeRequestDto.OrderHeader.CouponCode))
+                {
+                    options.Discounts = new List<SessionDiscountOptions>();
+                    var couponService = new CouponService();
+                    var coupon = couponService.Create(new CouponCreateOptions
+                    {
+                        // Set how much to reduce (in cents, so multiply by 100)
+                        AmountOff = (long)(stripeRequestDto.OrderHeader.Discount * 100),
+                        // Setting the currency
+                        Currency = "usd",
+                        // Set discount validity period
+                        Duration = "once"
+                    });
+                    var sessionDiscount = new SessionDiscountOptions()
+                    {
+                        Coupon = coupon.Id,
+                    };
+                    options.Discounts.Add(sessionDiscount);
+                }
                 var service = new SessionService();
                 service.Create(options);
                 Session session = service.Create(options);
