@@ -100,8 +100,11 @@ namespace Mango.Services.OrderAPI.Controllers
                 {
                     options.Discounts = new List<SessionDiscountOptions>();
                     var couponService = new CouponService();
+
                     var coupon = couponService.Create(new CouponCreateOptions
                     {
+                        // Set the name of the discount coupon
+                        Name = stripeRequestDto.OrderHeader.CouponCode,
                         // Set how much to reduce (in cents, so multiply by 100)
                         AmountOff = (long)(stripeRequestDto.OrderHeader.Discount * 100),
                         // Setting the currency
