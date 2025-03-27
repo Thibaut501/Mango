@@ -5,10 +5,13 @@ using Mango.Services.OrderAPI.Models.Dto;
 using Mango.Services.OrderAPI.Utility;
 using Mango.Services.ShoppingCartAPI.Service.IService;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Stripe.Checkout;
 using Stripe;
+using Stripe.Checkout;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Mango.Services.OrderAPI.Controllers
 {
@@ -17,16 +20,16 @@ namespace Mango.Services.OrderAPI.Controllers
     public class OrderAPIController : ControllerBase
     {
         protected ResponseDto _response;
-        private IMapper _mapper;
+        private readonly IMapper _mapper;
         private readonly AppDbContext _db;
-        private IProductService _productService;
-        public OrderAPIController(AppDbContext db,
-            IProductService productService, IMapper mapper)
+        private readonly IProductService _productService;
+
+        public OrderAPIController(AppDbContext db, IProductService productService, IMapper mapper)
         {
             _db = db;
-            this._response = new ResponseDto();
             _productService = productService;
             _mapper = mapper;
+            _response = new ResponseDto();
         }
 
         [Authorize]
@@ -54,77 +57,77 @@ namespace Mango.Services.OrderAPI.Controllers
             return _response;
         }
 
-
         [Authorize]
         [HttpPost("CreateStripeSession")]
         public async Task<ResponseDto> CreateStripeSession([FromBody] StripeRequestDto stripeRequestDto)
         {
             try
             {
-
                 var options = new SessionCreateOptions
                 {
-                    
                     SuccessUrl = stripeRequestDto.ApprovedUrl,
                     CancelUrl = stripeRequestDto.CancelUrl,
                     LineItems = new List<SessionLineItemOptions>(),
                     Mode = "payment",
-                    Discounts = new List<SessionDiscountOptions>()
+                    PaymentMethodTypes = new List<string> { "card" } // ✅ Card only; Apple Pay / Google Pay / Cash App Pay will work automatically
                 };
-                var Discount =new List<SessionDiscountOptions>()
+
+                List<SessionDiscountOptions> DiscountsObj = null;
+
+                if (!string.IsNullOrEmpty(stripeRequestDto.OrderHeader.CouponCode))
                 {
-                    new SessionDiscountOptions
+                    string couponCode = stripeRequestDto.OrderHeader.CouponCode;
+                    long amountOff = (long)(stripeRequestDto.OrderHeader.Discount * 100);
+                    string displayName = couponCode;
+
+                    var createCouponService = new CouponService();
+                    var newCouponOptions = new CouponCreateOptions
                     {
-                        Coupon=stripeRequestDto.OrderHeader.CouponCode
-                    }
+                        Currency = "usd",
+                        Duration = "once",
+                        AmountOff = amountOff,
+                        Name = displayName,
+                        Id = $"FIXED_{couponCode}_{DateTime.UtcNow.Ticks}"
                     };
+
+                    var newCoupon = createCouponService.Create(newCouponOptions);
+
+                    DiscountsObj = new List<SessionDiscountOptions>
+                    {
+                        new SessionDiscountOptions { Coupon = newCoupon.Id }
+                    };
+                }
+
                 foreach (var item in stripeRequestDto.OrderHeader.OrderDetails)
                 {
-                    var sessionLineItem = new SessionLineItemOptions
+                    options.LineItems.Add(new SessionLineItemOptions
                     {
                         PriceData = new SessionLineItemPriceDataOptions
                         {
-                            UnitAmount = (long)(item.Price * 100), // $20.99 -> 2099
+                            UnitAmount = (long)(item.Price * 100),
                             Currency = "usd",
                             ProductData = new SessionLineItemPriceDataProductDataOptions
                             {
-                                Name = item.Product.Name
+                                Name = item.Product?.Name ?? "Unnamed Product"
                             }
                         },
                         Quantity = item.Count
-                    };
-                    options.LineItems.Add(sessionLineItem);
-                }
-                //Create and add coupons
-                if (!string.IsNullOrEmpty(stripeRequestDto.OrderHeader.CouponCode))
-                {
-                    options.Discounts = new List<SessionDiscountOptions>();
-                    var couponService = new CouponService();
-
-                    var coupon = couponService.Create(new CouponCreateOptions
-                    {
-                        // Set the name of the discount coupon
-                        Name = stripeRequestDto.OrderHeader.CouponCode,
-                        // Set how much to reduce (in cents, so multiply by 100)
-                        AmountOff = (long)(stripeRequestDto.OrderHeader.Discount * 100),
-                        // Setting the currency
-                        Currency = "usd",
-                        // Set discount validity period
-                        Duration = "once"
                     });
-                    var sessionDiscount = new SessionDiscountOptions()
-                    {
-                        Coupon = coupon.Id,
-                    };
-                    options.Discounts.Add(sessionDiscount);
                 }
-                var service = new SessionService();
-                service.Create(options);
-                Session session = service.Create(options);
+
+                if (DiscountsObj != null)
+                {
+                    options.Discounts = DiscountsObj;
+                }
+
+                var sessionService = new SessionService();
+                Session session = sessionService.Create(options);
                 stripeRequestDto.StripeSessionUrl = session.Url;
-                OrderHeader orderHeader = _db.OrderHeaders.First(u => u.OrderHeaderId == stripeRequestDto.OrderHeader.OrderHeaderId);
+
+                var orderHeader = _db.OrderHeaders.First(u => u.OrderHeaderId == stripeRequestDto.OrderHeader.OrderHeaderId);
                 orderHeader.StripeSessionId = session.Id;
-                _db.SaveChanges();
+                await _db.SaveChangesAsync();
+
                 _response.Result = stripeRequestDto;
             }
             catch (Exception ex)
@@ -132,6 +135,40 @@ namespace Mango.Services.OrderAPI.Controllers
                 _response.Message = ex.Message;
                 _response.IsSuccess = false;
             }
+
+            return _response;
+        }
+
+        [Authorize]
+        [HttpPost("ValidateStripeSession")]
+        public async Task<ResponseDto> ValidateStripeSession([FromBody] int orderHeaderId)
+        {
+            try
+            {
+                OrderHeader orderHeader = _db.OrderHeaders.First(u => u.OrderHeaderId == orderHeaderId);
+
+                var sessionService = new SessionService();
+                var session = sessionService.Get(orderHeader.StripeSessionId);
+
+                var paymentIntentService = new PaymentIntentService();
+                var paymentIntent = paymentIntentService.Get(session.PaymentIntentId);
+
+                if (paymentIntent.Status == "succeeded")
+                {
+                    orderHeader.PaymentIntentId = paymentIntent.Id;
+                    orderHeader.Status = SD.Status_Approved;
+                    orderHeader.OrderTotal = session.AmountTotal.HasValue ? session.AmountTotal.Value / 100.0 : 0;
+
+                    _db.SaveChanges();
+                    _response.Result = _mapper.Map<OrderHeaderDto>(orderHeader);
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.Message = ex.Message;
+                _response.IsSuccess = false;
+            }
+
             return _response;
         }
     }
