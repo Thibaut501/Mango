@@ -7,6 +7,7 @@
         public string ApprovedUrl { get; set; }
         public string CancelUrl { get; set; }
         public OrderHeaderDto OrderHeader { get; set; }
+        public string? Currency { get; internal set; }
     }
 
 }
