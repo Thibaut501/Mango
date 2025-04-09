@@ -2,7 +2,7 @@
 using Mango.Web.Utility;
 
 namespace Mango.Web.Service
-    {
+{
     public class TokenProvider : ITokenProvider
     {
         private readonly IHttpContextAccessor _contextAccessor;

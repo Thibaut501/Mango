@@ -19,6 +19,7 @@ namespace Mango.Services.OrderAPI.Data
         public DbSet<OrderDetails> OrderDetails { get; set; }
         public object Coupons { get; internal set; }
         public object ApplicationUsers { get; internal set; }
+        public object Users { get; internal set; }
     }
 
 }
