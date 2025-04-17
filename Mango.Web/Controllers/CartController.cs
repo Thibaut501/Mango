@@ -53,9 +53,8 @@ namespace Mango.Web.Controllers
 
             cart.CartHeader.Phone = cartDto.CartHeader.Phone;
             cart.CartHeader.Email = cartDto.CartHeader.Email;
-            cart.CartHeader.Name = cartDto.CartHeader.Name;
-            cart.CartHeader.Email = cartDto.CartHeader.Email;
-            cart.CartHeader.Name = cartDto.CartHeader.Name;
+            cart.CartHeader.Name = cartDto.CartHeader.Name;           
+            
 
             // Call the order service to create the order
             var response = await _orderService.CreateOrder(cart);
