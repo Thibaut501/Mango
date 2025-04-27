@@ -45,7 +45,9 @@
                             <div class="row my-1">
                                 <div class="col-3">Order Date</div>
                                 <div class="col-9">
-                                    <input value="@Model.OrderTime.ToShortDateString()" readonly class="form-control" />
+                                    <input asp-for="OrderTime" class="form-control" type="datetime-local"
+                                           value="@Model.OrderTime.ToString("yyyy-MM-ddTHH:mm")" />
+
 
                                     
                                 </div>
@@ -88,7 +90,7 @@
                           
 
                             <ul class="list-group mb-3">
-                                @if (Model.OrderDetails != null)
+                                @if(Model.OrderDetails != null)
                                 {
                                     foreach (var detail in Model.OrderDetails)
                                     {

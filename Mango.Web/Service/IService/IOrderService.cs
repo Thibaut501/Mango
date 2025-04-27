@@ -2,13 +2,18 @@
 
 namespace Mango.Web.Service.IService
 {
-    public interface IOrderService
-    {
-        Task<ResponseDto?> CreateOrder(CartDto cartDto);
-        Task<ResponseDto?> CreateStripeSession(StripeRequestDto stripeRequestDto);
-        Task<ResponseDto?> ValidateStripeSession(int orderHeaderId);
-        Task<ResponseDto?> GetAllOrder(string? userId);
-        Task<ResponseDto?> GetOrder(int orderId);
-        Task<ResponseDto?> UpdateOrderStatus(int orderId, string newStatus);
+    
+   
+        public interface IOrderService
+        {
+            Task<ResponseDto?> CreateOrder(CartDto cartDto);
+            Task<ResponseDto?> CreateStripeSession(StripeRequestDto stripeRequestDto);
+            Task<ResponseDto?> GetAllOrders();           // ✅ Admin loads all orders
+            Task<ResponseDto?> GetAllOrder(string? userId); // ✅ User loads their own orders
+            Task<ResponseDto?> GetOrder(int orderId);
+            Task<ResponseDto?> UpdateOrderStatus(int orderId, string newStatus);
+            Task<ResponseDto?> ValidateStripeSession(int orderHeaderId);
+            Task<ResponseDto?> UpdateOrder(OrderHeaderDto model);
+        }
     }
-}
+

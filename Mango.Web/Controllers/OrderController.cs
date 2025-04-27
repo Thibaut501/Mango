@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Mango.Web.Models;
+﻿using Mango.Web.Models;
 using Mango.Web.Service.IService;
 using Mango.Web.Utility;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 
 namespace Mango.Web.Controllers
 {
@@ -18,63 +19,70 @@ namespace Mango.Web.Controllers
             _orderService = orderService;
         }
 
-        // Loads the Razor view
         public IActionResult OrderIndex()
         {
             return View();
         }
 
-
         public async Task<IActionResult> OrderDetail(int orderId)
         {
-            OrderHeaderDto orderHeaderDto = new OrderHeaderDto();
-            string userId = User.Claims
-                .FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            var orderHeaderDto = new OrderHeaderDto();
+            var userId = User.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Sub)?.Value;
 
             var response = await _orderService.GetOrder(orderId);
             if (response != null && response.IsSuccess)
             {
-                orderHeaderDto = JsonConvert.DeserializeObject<OrderHeaderDto>(Convert.ToString(response.Result))
-                                 ?? new OrderHeaderDto();
-
-                // ✅ Fix: ensure OrderDetails is initialized to avoid null reference
-                orderHeaderDto.OrderDetails ??= new List<OrderDetailsDto>();
+                var jsonResult = JsonConvert.SerializeObject(response.Result);
+                orderHeaderDto = JsonConvert.DeserializeObject<OrderHeaderDto>(jsonResult) ?? new OrderHeaderDto();
             }
 
             if (!User.IsInRole(SD.RoleAdmin) && userId != orderHeaderDto.UserId)
             {
                 return NotFound();
             }
-
             return View(orderHeaderDto);
         }
 
-
-        // API call to get all orders, filtered by userId if not admin
         [HttpGet]
-        public IActionResult GetAll()
+        public IActionResult GetAll(string status)
         {
-            IEnumerable<OrderHeaderDto> list;
+            IEnumerable<OrderHeaderDto> list = new List<OrderHeaderDto>();
             string userId = "";
 
-            if (!User.IsInRole(SD.RoleAdmin))
-            {
-                userId = User.Claims
-                             .FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Sub)?.Value;
-            }
+            ResponseDto? response;
 
-            ResponseDto response = _orderService.GetAllOrder(userId).GetAwaiter().GetResult();
-
-            if (response != null && response.IsSuccess)
+            if (User.IsInRole(SD.RoleAdmin))
             {
-                list = JsonConvert.DeserializeObject<List<OrderHeaderDto>>(Convert.ToString(response.Result));
+                response = _orderService.GetAllOrders().GetAwaiter().GetResult();
             }
             else
             {
-                list = new List<OrderHeaderDto>();
+                userId = User.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Sub)?.Value ?? "";
+                response = _orderService.GetAllOrder(userId).GetAwaiter().GetResult();
             }
 
-            return Json(new { data = list });
+            if (response != null && response.IsSuccess && response.Result != null)
+            {
+                var jsonString = Convert.ToString(response.Result);
+                if (!string.IsNullOrEmpty(jsonString))
+                {
+                    list = JsonConvert.DeserializeObject<List<OrderHeaderDto>>(jsonString) ?? new List<OrderHeaderDto>();
+                }
+            }
+
+            if (!string.IsNullOrEmpty(status) && status.ToLower() != "all")
+            {
+                status = status.ToLower();
+                list = status switch
+                {
+                    "approved" => list.Where(u => u.Status == SD.Status_Approved),
+                    "readyforpickup" => list.Where(u => u.Status == SD.Status_ReadyForPickup),
+                    "cancelled" => list.Where(u => u.Status == SD.Status_Cancelled || u.Status == SD.Status_Refunded),
+                    _ => list
+                };
+            }
+
+            return Json(new { data = list.OrderByDescending(u => u.OrderHeaderId) });
         }
     }
 }

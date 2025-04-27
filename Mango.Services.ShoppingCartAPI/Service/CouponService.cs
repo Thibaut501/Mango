@@ -22,8 +22,8 @@ namespace Mango.Services.ShoppingCartAPI.Service
         {
             var client = _httpClientFactory.CreateClient("Coupon");
             //var token = await _accessor.HttpContext.GetTokenAsync("access_token");
-            var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsInN1YiI6ImY5ZThmMjc0LTFmODktNDcyZC05OGNlLThhZmJlNDVhMWRkMSIsIm5hbWUiOiJhZG1pbkBnbWFpbC5jb20iLCJyb2xlIjoiQURNSU4iLCJuYmYiOjE3NDQ4Nzg5NzEsImV4cCI6MTc0NTQ4Mzc3MSwiaWF0IjoxNzQ0ODc4OTcxLCJpc3MiOiJtYW5nby1hdXRoLWFwaSIsImF1ZCI6Im1hbmdvLWNsaWVudCJ9.jJCi8m0erpCPPvBXwiBmfDvJhA_GtXi4fkYuQ-CFHcI";
-     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsInN1YiI6ImY5ZThmMjc0LTFmODktNDcyZC05OGNlLThhZmJlNDVhMWRkMSIsIm5hbWUiOiJhZG1pbkBnbWFpbC5jb20iLCJyb2xlIjoiQURNSU4iLCJuYmYiOjE3NDU2NDIxMzEsImV4cCI6MTc0NjI0NjkzMSwiaWF0IjoxNzQ1NjQyMTMxLCJpc3MiOiJtYW5nby1hdXRoLWFwaSIsImF1ZCI6Im1hbmdvLWNsaWVudCJ9.TPTQgWmEG43KTIETY8y3jGmTek_mec3igk7bYKyzDGw";
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             var response = await client.GetAsync($"/api/coupon/GetByCode/{couponCode}");
             var apiContet = await response.Content.ReadAsStringAsync();
             var resp = JsonConvert.DeserializeObject<ResponseDto>(apiContet);

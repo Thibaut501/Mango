@@ -1,7 +1,27 @@
-﻿$(document).ready(function () {
-    $('#tblData').DataTable({
+﻿var dataTable;
+
+$(document).ready(function () {
+    loadDataTable();
+});
+
+function loadDataTable() {
+    var url = window.location.search;
+    if (url.includes("approved")) {
+        url = "/Order/GetAll?status=approved";
+    }
+    else if (url.includes("readyforpickup")) {
+        url = "/Order/GetAll?status=readyforpickup";
+    }
+    else if (url.includes("cancelled")) {
+        url = "/Order/GetAll?status=cancelled";
+    }
+    else {
+        url = "/Order/GetAll?status=all";
+    }
+
+    dataTable = $('#tblData').DataTable({
         "ajax": {
-            "url": "/Order/GetAll",
+            "url": url,
             "type": "GET",
             "datatype": "json"
         },
@@ -19,14 +39,18 @@
                 "width": "10%"
             },
             {
-                data: 'orderHeaderId',
+                "data": "orderHeaderId",
                 "render": function (data) {
-                    return `<div class="w-75 btn-group" role="group">
-                    <a href="/order/orderDetail?orderId=${data}" class="btn btn-primary mx-2"><i class="bi bi-pencil-square"></i></a>
-                    </div>`
+                    return `
+                        <div class="text-center">
+                            <a href="/Order/OrderDetail?orderId=${data}" class="btn btn-success btn-sm text-white">
+                                <i class="bi bi-pencil-square"></i> View
+                            </a>
+                        </div>
+                    `;
                 },
                 "width": "10%"
             }
         ]
     });
-});
+}
