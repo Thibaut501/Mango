@@ -1,11 +1,10 @@
 ﻿@model Mango.Web.Models.CartDto
 
-
 <form method="post">
     <input asp-for="CartHeader.UserId" hidden />
     <input asp-for="CartHeader.CartHeaderId" hidden />
     <input asp-for="CartHeader.CouponCode" hidden />
-    <input asp-for ="CartHeader.Discount" hidden />
+    <input asp-for="CartHeader.Discount" hidden />
     <input asp-for="CartHeader.CartTotal" hidden />
 
     <div class="border mt-2 p-4 rounded">
@@ -18,79 +17,80 @@
             </div>
             <br /><br /><br />
             <hr />
+
             <div class="col-7">
                 <div class="row pt-2">
                     <div class="col-12 py-2">
-                        <input asp-for="CartHeader.Name "placeholder="full name..." class="form-control" />
+                        <input asp-for="CartHeader.Name" placeholder="Full name..." class="form-control" autocomplete="off" />
                         <span asp-validation-for="CartHeader.Name" class="text-danger"></span>
-                    </div>                   
-                    
-                    <div class="col-12 py-2">
-                        <input placeholder="email..."asp-for="CartHeader.Email" class="form-control" />
-                    <span asp-validation-for="CartHeader.Email" class="text-danger"></span>
-                </div>
-                    
-                    <div class="col-12 py-2">
-                        <input class="form-control" asp-for="CartHeader.Phone" placeholder="phone number..." />
-                <span asp-validation-for="CartHeader.Phone" class="text-danger"></span>
-                    </div>
-                    <div class="col-12 pt-2">
-                        <label class="col-form-label">Order will be ready in 30minutes after placing order. If you place order when restaurant is closed it will be ready next day.</label>
                     </div>
 
+                    <div class="col-12 py-2">
+                        <input asp-for="CartHeader.Email" placeholder="Email..." class="form-control" autocomplete="off" />
+                        <span asp-validation-for="CartHeader.Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-12 py-2">
+                        <input asp-for="CartHeader.Phone" placeholder="Phone number..." class="form-control" autocomplete="off" />
+                        <span asp-validation-for="CartHeader.Phone" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-12 pt-2">
+                        <label class="col-form-label">
+                            Order will be ready in 30 minutes after placing order. If you place order when the restaurant is closed, it will be ready the next day.
+                        </label>
+                    </div>
                 </div>
             </div>
+
             <div class="col-5">
                 <div class="card mt-2">
                     <div class="card-body">
-                        <div class=" d-none d-lg-block">
+                        <div class="d-none d-lg-block">
                             <div class="row text-danger">
-                                <div class="col-6">
-                                    Product Details
-                                </div>
-
-                                <div class="col-3">
-                                    Price
-                                </div>
-                                <div class="col-3">
-                                    Count
-                                </div>
+                                <div class="col-6">Product Details</div>
+                                <div class="col-3">Price</div>
+                                <div class="col-3">Count</div>
                             </div>
                         </div>
                         <hr />
 
-                        @foreach(var cartObj in Model.CartDetails)
+                        @if (Model?.CartDetails != null && Model.CartDetails.Any())
                         {
-                        <div class="row h-100">
-                               <div class="col-6">
-                                <span style="font-size:20px">@cartObj.Product.Name</span>
+                            foreach (var cartObj in Model.CartDetails)
+                            {
+                                <div class="row h-100">
+                                    <div class="col-6">
+                                        <span style="font-size:20px">@cartObj.Product.Name</span>
+                                    </div>
+                                    <div class="col-3" style="font-size:11px;">
+                                        <span style="font-size:17px;">Rs @cartObj.Product.Price</span>
+                                    </div>
+                                    <div class="col-3" style="font-size:11px;">
+                                        <span style="font-size:17px;">@cartObj.Count</span>
+                                    </div>
                                 </div>
-                            <div class="col-3" style="font-size:11px;">
-                                <span style="font-size:17px;"> @cartObj.Product.Price.ToString("c")</span>
-
-                            </div>
-                            <div class="col-3" style="font-size:11px;">
-                                <span style="font-size:17px;">  @cartObj.Count</span>
-                            </div>
-                        </div>
-                        <hr />
+                                <hr />
+                            }
                         }
+
                         <div class="row">
                             <div class="col-12 text-center pr-4 text-danger">
-                                Order Total :  @Model.CartHeader.CartTotal.ToString("c") <br />
+                                Order Total: Rs @Model.CartHeader.CartTotal<br />
                                 @if (Model.CartHeader.Discount > 0)
-                        {
-                            <span class="text-success"> Order Discount :  @Model.CartHeader.Discount.ToString("c")</span>
-                        }
-                    </div>
+                                {
+                                    <span class="text-success">
+                                        Order Discount: Rs @Model.CartHeader.Discount
+                                    </span>
+                                }
+                            </div>
                         </div>
-
                     </div>
+
                     <div class="card-footer">
                         <div class="row">
-
-                            <div class="col-12 ">
-                                <button type="submit" class="btn btn-success form-control ">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success form-control">
                                     <span>Place Order</span>
                                 </button>
                             </div>
@@ -99,10 +99,9 @@
                 </div>
             </div>
         </div>
-   </div>
+    </div>
 </form>
+
 @section Scripts {
-<partial name="_ValidationScriptsPartial" />
+    <partial name="_ValidationScriptsPartial" />
 }
-
-

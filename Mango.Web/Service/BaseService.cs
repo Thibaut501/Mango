@@ -2,6 +2,7 @@
 using Mango.Web.Service.IService;
 using Newtonsoft.Json;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using static Mango.Web.Utility.SD;
 
@@ -11,6 +12,7 @@ namespace Mango.Web.Service
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ITokenProvider _tokenProvider;
+
         public BaseService(IHttpClientFactory httpClientFactory, ITokenProvider tokenProvider)
         {
             _httpClientFactory = httpClientFactory;
@@ -21,101 +23,85 @@ namespace Mango.Web.Service
         {
             try
             {
-                HttpClient client = _httpClientFactory.CreateClient("MangoAPI");
-                HttpRequestMessage message = new();
-                message.Headers.Add("Accept", "application/json");
-                if (requestDto.ContentType == ContentType.MultipartFormData)
+                var client = _httpClientFactory.CreateClient();
+
+                var message = new HttpRequestMessage
                 {
-                    message.Headers.Add("Accept", "*/*");
-                }
-                else
-                {
-                    message.Headers.Add("Accept", "application/json");
-                }
-                //token
+                    RequestUri = new Uri(requestDto.Url),
+                    Method = requestDto.ApiType switch
+                    {
+                        ApiType.POST => HttpMethod.Post,
+                        ApiType.PUT => HttpMethod.Put,
+                        ApiType.DELETE => HttpMethod.Delete,
+                        _ => HttpMethod.Get
+                    }
+                };
+
+                message.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
                 if (withBearer)
                 {
                     var token = _tokenProvider.GetToken();
-                    message.Headers.Add("Authorization", $"Bearer {token}");
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    }
                 }
 
-                message.RequestUri = new Uri(requestDto.Url);
+                // Handle request body
                 if (requestDto.Data != null)
-
+                {
                     if (requestDto.ContentType == ContentType.MultipartFormData)
                     {
-                        message.Content = new StringContent(JsonConvert.SerializeObject(requestDto.Data), Encoding.UTF8, "application/json");
                         var content = new MultipartFormDataContent();
 
                         foreach (var prop in requestDto.Data.GetType().GetProperties())
                         {
                             var value = prop.GetValue(requestDto.Data);
-                            if (value is FormFile)
+                            if (value is FormFile file)
                             {
-                                var file = (FormFile)value;
-                                if (file != null)
-                                {
-                                    content.Add(new StreamContent(file.OpenReadStream()), prop.Name, file.FileName);
-                                }
+                                content.Add(new StreamContent(file.OpenReadStream()), prop.Name, file.FileName);
                             }
                         }
+
+                        message.Content = content;
                     }
                     else
                     {
-                        if (requestDto.Data != null)
-                        {
-                            message.Content = new StringContent(JsonConvert.SerializeObject(requestDto.Data), Encoding.UTF8, "application/json");
-                        }
+                        string jsonData = JsonConvert.SerializeObject(requestDto.Data);
+                        message.Content = new StringContent(jsonData, Encoding.UTF8, "application/json");
                     }
-
-
-
-
-
-                HttpResponseMessage? apiResponse = null;
-
-                switch (requestDto.ApiType)
-                {
-                    case ApiType.POST:
-                        message.Method = HttpMethod.Post;
-                        break;
-                    case ApiType.DELETE:
-                        message.Method = HttpMethod.Delete;
-                        break;
-                    case ApiType.PUT:
-                        message.Method = HttpMethod.Put;
-                        break;
-                    default:
-                        message.Method = HttpMethod.Get;
-                        break;
                 }
 
-                apiResponse = await client.SendAsync(message);
+                var response = await client.SendAsync(message);
 
-                switch (apiResponse.StatusCode)
+                var apiContent = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    case HttpStatusCode.NotFound:
-                        return new() { IsSuccess = false, Message = "Not Found" };
-                    case HttpStatusCode.Forbidden:
-                        return new() { IsSuccess = false, Message = "Access Denied" };
-                    case HttpStatusCode.Unauthorized:
-                        return new() { IsSuccess = false, Message = "Unauthorized" };
-                    case HttpStatusCode.InternalServerError:
-                        return new() { IsSuccess = false, Message = "Internal Server Error" };
-                    default:
-                        var apiContent = await apiResponse.Content.ReadAsStringAsync();
-                        var apiResponseDto = JsonConvert.DeserializeObject<ResponseDto>(apiContent);
-                        return apiResponseDto;
+                    return new ResponseDto
+                    {
+                        IsSuccess = false,
+                        Message = response.StatusCode switch
+                        {
+                            HttpStatusCode.NotFound => "Not Found",
+                            HttpStatusCode.Forbidden => "Access Denied",
+                            HttpStatusCode.Unauthorized => "Unauthorized",
+                            HttpStatusCode.InternalServerError => "Internal Server Error",
+                            _ => $"Error: {response.StatusCode}"
+                        }
+                    };
                 }
+
+                return JsonConvert.DeserializeObject<ResponseDto>(apiContent);
             }
             catch (Exception ex)
             {
-                var dto = new ResponseDto
+                return new ResponseDto
                 {
-                    Message = ex.Message.ToString(),
-                    IsSuccess = false
+                    IsSuccess = false,
+                    Message = ex.Message
                 };
-                return dto;
             }
         }
     }

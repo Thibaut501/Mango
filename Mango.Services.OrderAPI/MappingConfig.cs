@@ -1,5 +1,4 @@
-﻿
-using AutoMapper;
+﻿using AutoMapper;
 using Mango.Services.OrderAPI.Models;
 using Mango.Services.OrderAPI.Models.Dto;
 
@@ -11,17 +10,26 @@ namespace Mango.Services.OrderAPI
         {
             var mappingConfig = new MapperConfiguration(config =>
             {
+                // Cart ↔ OrderHeader
                 config.CreateMap<OrderHeaderDto, CartHeaderDto>()
-                .ForMember(dest=>dest.CartTotal, u=>u.MapFrom(src=>src.OrderTotal)).ReverseMap();
+                    .ForMember(dest => dest.CartTotal, opt => opt.MapFrom(src => src.OrderTotal))
+                    .ReverseMap();
 
                 config.CreateMap<CartDetailsDto, OrderDetailsDto>()
-                .ForMember(dest => dest.ProductName, u => u.MapFrom(src => src.Product.Name))
-                 .ForMember(dest => dest.Price, u => u.MapFrom(src => src.Product.Price));
+                    .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                    .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Product.Price));
+
                 config.CreateMap<OrderDetailsDto, CartDetailsDto>();
 
-                config.CreateMap<OrderHeader, OrderHeaderDto>().ReverseMap();
-                config.CreateMap<OrderDetails, OrderDetailsDto>().ReverseMap();
+                // ✅ OrderHeader → OrderHeaderDto with nested OrderDetails
+                config.CreateMap<OrderHeader, OrderHeaderDto>()
+                    .ForMember(dest => dest.OrderDetails, opt => opt.MapFrom(src => src.OrderDetails));
 
+                config.CreateMap<OrderHeaderDto, OrderHeader>();
+
+                // ✅ OrderDetails mappings
+                config.CreateMap<OrderDetails, OrderDetailsDto>();
+                config.CreateMap<OrderDetailsDto, OrderDetails>();
             });
 
             return mappingConfig;

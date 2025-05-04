@@ -8,8 +8,14 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Content Include="Models\images\mango.png" />
+	  <Content Include="Models\images\order.PNG" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="AutoMapper" Version="13.0.1" />
 		<PackageReference Include="ChatGPT" Version="1.0.0-preview.21" />
+		<PackageReference Include="HiNetCloud.System.Web.WebPages" Version="24.8.10.9" />
 		<PackageReference Include="IdentityModel" Version="7.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" />
@@ -22,6 +28,9 @@
 		<PackageReference Include="Stripe.net" Version="47.0.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.1.1" />
+
+
+
 	</ItemGroup>
 
 	<ItemGroup>

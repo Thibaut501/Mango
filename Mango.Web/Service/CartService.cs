@@ -21,21 +21,23 @@ namespace Mango.Web.Service
                 Url = SD.ShoppingCartAPIBase + "/api/cart/ApplyCoupon"
             });
         }
-        public async Task<ResponseDto?> GetCartByUserIdAsnyc(string userId)
+
+
+        public async Task<ResponseDto?> GetCartByUserIdAsync(string? userId)
         {
+            if (string.IsNullOrEmpty(userId))
+                return new ResponseDto { IsSuccess = false, Message = "User ID is missing" };
+
             var response = await _baseService.SendAsync(new RequestDto()
             {
                 ApiType = SD.ApiType.GET,
                 Url = SD.ShoppingCartAPIBase + "/api/cart/GetCart/" + userId
             });
 
-            // Log the API response for debugging
             Console.WriteLine($"Service Layer Response: {response?.Result}");
 
             return response;
         }
-
-
 
         public async Task<ResponseDto?> RemoveFromCartAsync(int cartDetailsId)
         {
@@ -44,6 +46,14 @@ namespace Mango.Web.Service
                 ApiType = SD.ApiType.POST,
                 Data = cartDetailsId,
                 Url = SD.ShoppingCartAPIBase + "/api/cart/RemoveCart"
+            });
+        }
+        public async Task<ResponseDto?> GetCartByUserIdAsnyc(string userId)
+        {
+            return await _baseService.SendAsync(new RequestDto()
+            {
+                ApiType = SD.ApiType.GET,
+                Url = SD.ShoppingCartAPIBase + "/api/cart/GetCart/" + userId
             });
         }
 

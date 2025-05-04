@@ -22,5 +22,6 @@ namespace Mango.Services.OrderAPI.Models
         public string? PaymentIntentId { get; set; }
         public string? StripeSessionId { get; set; }
         public IEnumerable<OrderDetails> OrderDetails { get; set; }
+        }
     }
-}
+

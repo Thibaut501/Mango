@@ -5,9 +5,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Mango.Web.Controllers
 {
+    [Authorize]
     public class CartController : Controller
     {
         private readonly ICartService _cartService;
@@ -19,13 +21,11 @@ namespace Mango.Web.Controllers
             _orderService = orderService;
         }
 
-        [Authorize]
         public async Task<IActionResult> CartIndex()
         {
             return View(await LoadCartDtoBasedOnLoggedInUser());
         }
 
-        [Authorize]
         public async Task<IActionResult> Checkout()
         {
             return View(await LoadCartDtoBasedOnLoggedInUser());
@@ -33,18 +33,16 @@ namespace Mango.Web.Controllers
 
         [HttpPost]
         [ActionName("Checkout")]
-        public async Task<IActionResult> Checkout(CartDto cartDto)
+        public async Task<IActionResult> CheckoutPost(CartDto cartDto)
         {
             CartDto cart = await LoadCartDtoBasedOnLoggedInUser();
 
-            // Check for null cart or cart header
             if (cart == null || cart.CartHeader == null)
             {
                 TempData["error"] = "There was an issue retrieving the cart.";
                 return RedirectToAction(nameof(CartIndex));
             }
 
-            // Update cart header with values from cartDto
             if (cartDto?.CartHeader == null)
             {
                 TempData["error"] = "Invalid checkout details.";
@@ -53,57 +51,62 @@ namespace Mango.Web.Controllers
 
             cart.CartHeader.Phone = cartDto.CartHeader.Phone;
             cart.CartHeader.Email = cartDto.CartHeader.Email;
-            cart.CartHeader.Name = cartDto.CartHeader.Name;           
-            
+            cart.CartHeader.Name = cartDto.CartHeader.Name;
 
-            // Call the order service to create the order
             var response = await _orderService.CreateOrder(cart);
-            OrderHeaderDto orderHeaderDto = JsonConvert.DeserializeObject<OrderHeaderDto>(Convert.ToString(response.Result));
-
-            if (response != null && response.IsSuccess)
+            if (response == null || !response.IsSuccess || response.Result == null)
             {
-                // Get the domain and prepare the Stripe session
-                var domain = Request.Scheme + "://" + Request.Host.Value + "/";
-
-                StripeRequestDto stripeRequestDto = new()
-                {
-                    ApprovedUrl = domain + "cart/Confirmation?orderId=" + orderHeaderDto.OrderHeaderId,
-                    CancelUrl = domain + "cart/checkout",
-                    OrderHeader = orderHeaderDto
-                };
-
-                // Create the Stripe session
-                var stripeResponse = await _orderService.CreateStripeSession(stripeRequestDto);
-                if (stripeResponse == null || !stripeResponse.IsSuccess)
-                {
-                    TempData["error"] = "Stripe session creation failed: " + (stripeResponse?.Message ?? "Unknown error");
-                    return View(cart);
-                }
-                StripeRequestDto stripeResponseResult = JsonConvert.DeserializeObject<StripeRequestDto>(Convert.ToString(stripeResponse.Result));
-
-                // Redirect to Stripe session URL
-                Response.Headers.Add("Location", stripeResponseResult.StripeSessionUrl);
-                return new StatusCodeResult(303);
+                TempData["error"] = "There was an issue creating the order.";
+                return View(cart);
             }
 
-            // If the order creation response is not successful
-            TempData["error"] = "There was an issue creating the order.";
-            return View();
+            OrderHeaderDto? orderHeaderDto = JsonConvert.DeserializeObject<OrderHeaderDto>(Convert.ToString(response.Result));
+            if (orderHeaderDto == null)
+            {
+                TempData["error"] = "Order deserialization failed.";
+                return View(cart);
+            }
+
+            var domain = Request.Scheme + "://" + Request.Host.Value + "/";
+            StripeRequestDto stripeRequestDto = new()
+            {
+                ApprovedUrl = domain + "cart/Confirmation?orderId=" + orderHeaderDto.OrderHeaderId,
+                CancelUrl = domain + "cart/checkout",
+                OrderHeader = orderHeaderDto
+            };
+
+            var stripeResponse = await _orderService.CreateStripeSession(stripeRequestDto);
+            if (stripeResponse == null || !stripeResponse.IsSuccess || stripeResponse.Result == null)
+            {
+                TempData["error"] = "Stripe session creation failed: " + (stripeResponse?.Message ?? "Unknown error");
+                return View(cart);
+            }
+
+            StripeRequestDto? stripeResponseResult = JsonConvert.DeserializeObject<StripeRequestDto>(Convert.ToString(stripeResponse.Result));
+
+            if (stripeResponseResult == null || string.IsNullOrEmpty(stripeResponseResult.StripeSessionUrl))
+            {
+                TempData["error"] = "Invalid Stripe session response.";
+                return View(cart);
+            }
+
+            Response.Headers.Add("Location", stripeResponseResult.StripeSessionUrl);
+            return new StatusCodeResult(303);
         }
 
-        [Authorize]
-        public async Task<IActionResult> Confirmation(int orderId)
+        public IActionResult Confirmation(int orderId)
         {
             return View(orderId);
         }
 
         public async Task<IActionResult> Remove(int cartDetailsId)
         {
-            var userId = User.Claims.Where(u => u.Type == JwtRegisteredClaimNames.Sub)?.FirstOrDefault()?.Value;
-            ResponseDto? response = await _cartService.RemoveFromCartAsync(cartDetailsId);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var response = await _cartService.RemoveFromCartAsync(cartDetailsId);
+
             if (response != null && response.IsSuccess)
             {
-                TempData["success"] = "Cart updated successfully";
+                TempData["success"] = "Item removed successfully.";
                 return RedirectToAction(nameof(CartIndex));
             }
 
@@ -114,45 +117,52 @@ namespace Mango.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ApplyCoupon(CartDto cartDto)
         {
-            ResponseDto? response = await _cartService.ApplyCouponAsync(cartDto);
+            var response = await _cartService.ApplyCouponAsync(cartDto);
+
             if (response != null && response.IsSuccess)
             {
-                TempData["success"] = "Coupon applied successfully";
+                TempData["success"] = "Coupon applied successfully.";
                 return RedirectToAction(nameof(CartIndex));
             }
 
-            TempData["error"] = "There was an issue applying the coupon.";
-            return View();
+            TempData["error"] = "Failed to apply coupon.";
+            return View(cartDto);
         }
 
         [HttpPost]
         public async Task<IActionResult> RemoveCoupon(CartDto cartDto)
         {
             cartDto.CartHeader.CouponCode = "";
-            ResponseDto? response = await _cartService.ApplyCouponAsync(cartDto);
+            var response = await _cartService.ApplyCouponAsync(cartDto);
+
             if (response != null && response.IsSuccess)
             {
-                TempData["success"] = "Coupon removed successfully";
+                TempData["success"] = "Coupon removed successfully.";
                 return RedirectToAction(nameof(CartIndex));
             }
 
-            TempData["error"] = "There was an issue removing the coupon.";
-            return View();
+            TempData["error"] = "Failed to remove coupon.";
+            return View(cartDto);
         }
 
         private async Task<CartDto> LoadCartDtoBasedOnLoggedInUser()
         {
-            var userId = User.Claims.Where(u => u.Type == JwtRegisteredClaimNames.Sub)?.FirstOrDefault()?.Value;
-            ResponseDto? response = await _cartService.GetCartByUserIdAsnyc(userId);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var response = await _cartService.GetCartByUserIdAsnyc(userId);
 
-            if (response != null && response.IsSuccess)
+            if (response != null && response.IsSuccess && response.Result != null)
             {
-                CartDto cartDto = JsonConvert.DeserializeObject<CartDto>(Convert.ToString(response.Result));
+                var cartDto = JsonConvert.DeserializeObject<CartDto>(Convert.ToString(response.Result));
+                cartDto.CartDetails ??= new List<CartDetailsDto>();
+                cartDto.CartHeader ??= new CartHeaderDto();
                 return cartDto;
             }
 
-            // Return a new CartDto if no cart is found or the response is not successful
-            return new CartDto();
+            return new CartDto
+            {
+                CartHeader = new CartHeaderDto(),
+                CartDetails = new List<CartDetailsDto>()
+            };
         }
     }
 }

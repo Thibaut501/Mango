@@ -1,4 +1,5 @@
-﻿@model CartDto
+﻿@model Mango.Web.Models.CartDto
+
 @if (Model.CartHeader != null && Model.CartDetails?.Count() > 0)
 {
     <form method="post" asp-action="EmailCart">

@@ -9,6 +9,7 @@
   <ItemGroup>
 	  <PackageReference Include="AutoMapper" Version="13.0.1" />
 	  <PackageReference Include="ChatGPT" Version="1.0.0-preview.21" />
+	  <PackageReference Include="HiNetCloud.System.Web.WebPages" Version="24.8.10.9" />
 	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
 	  
 	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0-preview.7.24405.3">

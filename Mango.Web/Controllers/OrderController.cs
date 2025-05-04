@@ -26,39 +26,45 @@ namespace Mango.Web.Controllers
 
         public async Task<IActionResult> OrderDetail(int orderId)
         {
-            var orderHeaderDto = new OrderHeaderDto();
             var userId = User.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Sub)?.Value;
-
             var response = await _orderService.GetOrder(orderId);
-            if (response != null && response.IsSuccess)
+
+            if (response == null || !response.IsSuccess || response.Result == null)
             {
-                var jsonResult = JsonConvert.SerializeObject(response.Result);
-                orderHeaderDto = JsonConvert.DeserializeObject<OrderHeaderDto>(jsonResult) ?? new OrderHeaderDto();
+                TempData["error"] = "Order not found or failed to retrieve.";
+                return RedirectToAction(nameof(OrderIndex));
+            }
+
+            var orderHeaderDto = JsonConvert.DeserializeObject<OrderHeaderDto>(Convert.ToString(response.Result));
+
+            if (orderHeaderDto == null)
+            {
+                TempData["error"] = "Failed to load order details.";
+                return RedirectToAction(nameof(OrderIndex));
             }
 
             if (!User.IsInRole(SD.RoleAdmin) && userId != orderHeaderDto.UserId)
             {
                 return NotFound();
             }
+
             return View(orderHeaderDto);
         }
 
         [HttpGet]
-        public IActionResult GetAll(string status)
+        public async Task<IActionResult> GetAll(string status)
         {
             IEnumerable<OrderHeaderDto> list = new List<OrderHeaderDto>();
-            string userId = "";
-
+            string userId = User.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Sub)?.Value ?? "";
             ResponseDto? response;
 
             if (User.IsInRole(SD.RoleAdmin))
             {
-                response = _orderService.GetAllOrders().GetAwaiter().GetResult();
+                response = await _orderService.GetAllOrders();
             }
             else
             {
-                userId = User.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Sub)?.Value ?? "";
-                response = _orderService.GetAllOrder(userId).GetAwaiter().GetResult();
+                response = await _orderService.GetAllOrder(userId);
             }
 
             if (response != null && response.IsSuccess && response.Result != null)
@@ -75,9 +81,9 @@ namespace Mango.Web.Controllers
                 status = status.ToLower();
                 list = status switch
                 {
-                    "approved" => list.Where(u => u.Status == SD.Status_Approved),
-                    "readyforpickup" => list.Where(u => u.Status == SD.Status_ReadyForPickup),
-                    "cancelled" => list.Where(u => u.Status == SD.Status_Cancelled || u.Status == SD.Status_Refunded),
+                    "approved" => list.Where(u => u.Status.Equals(SD.Status_Approved, StringComparison.OrdinalIgnoreCase)),
+                    "readyforpickup" => list.Where(u => u.Status.Equals(SD.Status_ReadyForPickup, StringComparison.OrdinalIgnoreCase)),
+                    "cancelled" => list.Where(u => u.Status.Equals(SD.Status_Cancelled, StringComparison.OrdinalIgnoreCase) || u.Status.Equals(SD.Status_Refunded, StringComparison.OrdinalIgnoreCase)),
                     _ => list
                 };
             }
