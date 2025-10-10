@@ -74,7 +74,7 @@ namespace Mango.Services.OrderAPI.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<double>("O5rderTotal")
+                    b.Property<double>("OrderTotal")
                         .HasColumnType("float");
 
                     b.Property<DateTime>("OrderTime")

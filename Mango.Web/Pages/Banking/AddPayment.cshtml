@@ -1,0 +1,42 @@
+@page
+@model Mango.Web.Pages.Banking.AddPaymentModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles="ADMIN")]
+@section Styles { <link rel="stylesheet" href="~/css/banking.css" asp-append-version="true" /> }
+<div class="banking-shell">
+    <div class="titlebar">
+        <div>
+            <h2 class="mb-0">Add Payment</h2>
+            <div class="subtitle">Record a new incoming payment</div>
+        </div>
+        <a asp-page="/Banking/Payments" class="btn btn-outline-secondary">Back to list</a>
+    </div>
+
+    <form method="post" class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="Input.Client" class="form-label"></label>
+            <input asp-for="Input.Client" class="form-control" placeholder="Client name or reference" />
+            <span asp-validation-for="Input.Client" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.Method" class="form-label"></label>
+            <select asp-for="Input.Method" class="form-select">
+                <option>Cash</option>
+                <option>Juice</option>
+                <option>Cheque</option>
+                <option>Blink</option>
+                <option>Card</option>
+                <option>Bank</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.Amount" class="form-label"></label>
+            <input asp-for="Input.Amount" type="number" step="0.01" inputmode="decimal" class="form-control" placeholder="0.00" />
+            <span asp-validation-for="Input.Amount" class="text-danger"></span>
+        </div>
+        <div class="col-12">
+            <button class="btn btn-primary">Save</button>
+            <a asp-page="/Banking/Payments" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+@section Scripts{<partial name="_ValidationScriptsPartial"/>}

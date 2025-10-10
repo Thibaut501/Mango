@@ -19,7 +19,7 @@ namespace Mango.Web.Controllers
             _cartService = cartService;
         }
 
-        public async Task  <IActionResult> Index()
+        public async Task<IActionResult> Index()
         {
             List<ProductDto>? list = new();
             ResponseDto? response = await _productService.GetAllProductsAsync();
@@ -27,35 +27,37 @@ namespace Mango.Web.Controllers
             {
                 list = JsonConvert.DeserializeObject<List<ProductDto>>(Convert.ToString(response.Result));
             }
-            else
-            {
-                TempData["error"] = response?.Message;
-            }
-
             return View(list);
         }
 
-        [Authorize]
-        public async Task<IActionResult> ProductDetails(int productId)
+        // Conventional routing only; accept multiple parameter names for robustness
+        [AllowAnonymous]
+        public async Task<IActionResult> ProductDetails([FromRoute] int? id, [FromQuery(Name = "id")] int? idQuery, [FromQuery] int? productId)
         {
-            ProductDto? model = new();
-            ResponseDto? response = await _productService.GetProductByIdAsync(productId);
-            if (response != null & response.IsSuccess)
+            var pid = id ?? idQuery ?? productId;
+            if (!pid.HasValue || pid.Value <= 0)
             {
-                model = JsonConvert.DeserializeObject<ProductDto>(Convert.ToString(response.Result));
-            }
-            else
-            {
-                TempData["error"] = response?.Message;
+                TempData["error"] = "Invalid product id.";
+                return RedirectToAction(nameof(Index));
             }
 
-            return View(model);
+            var response = await _productService.GetProductByIdAsync(pid.Value);
+            if (response != null && response.IsSuccess && response.Result != null)
+            {
+                var model = JsonConvert.DeserializeObject<ProductDto>(Convert.ToString(response.Result));
+                if (model != null)
+                {
+                    return View(model);
+                }
+            }
+            TempData["error"] = response?.Message ?? "Unable to load product.";
+            return RedirectToAction(nameof(Index));
         }
 
         [Authorize]
         [HttpPost]
         [ActionName("ProductDetails")]
-        public async Task<IActionResult> ProductDetails(ProductDto productDto)
+        public async Task<IActionResult> ProductDetailsPost(ProductDto productDto)
         {
             CartDto cartDto = new CartDto()
             {
@@ -72,25 +74,21 @@ namespace Mango.Web.Controllers
 
             };
 
-            List<CartDetailsDto> cartDetailsDtos = new() { cartDetails};
-            cartDto.CartDetails = cartDetailsDtos; 
-
+            List<CartDetailsDto> cartDetailsDtos = new() { cartDetails };
+            cartDto.CartDetails = cartDetailsDtos;
 
             ResponseDto? response = await _cartService.UpsertCartAsync(cartDto);
             if (response != null && response.IsSuccess)
             {
-                TempData["Success"] = "Item has been added to the Shopping Cart";
+                TempData["success"] = "Item has been added to the Shopping Cart";
                 return RedirectToAction(nameof(Index));
             }
-            else
-            {
-                TempData["error"] = response?.Message;
-            }
 
+            TempData["error"] = response?.Message;
             return View(productDto);
         }
 
-        [Authorize(Roles =SD.RoleAdmin)]
+        [Authorize(Roles = SD.RoleAdmin)]
         public IActionResult Privacy()
         {
             return View();

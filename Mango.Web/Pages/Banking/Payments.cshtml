@@ -1,0 +1,53 @@
+@page
+@model Mango.Web.Pages.Banking.PaymentsModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles="ADMIN")]
+@section Styles { <link rel="stylesheet" href="~/css/banking.css" asp-append-version="true" /> }
+<div class="banking-shell">
+    <div class="titlebar">
+        <div>
+            <h2 class="mb-0">Payments</h2>
+            <div class="subtitle">Record, verify, and view payments</div>
+            @if (Model.TodayTotals?.Count > 0)
+            {
+                <div class="mt-2 d-flex flex-wrap gap-2">
+                    @foreach (var kv in Model.TodayTotals.OrderBy(k=>k.Key)){
+                        <span class="badge bg-dark">@kv.Key: @kv.Value.ToString("C")</span>
+                    }
+                </div>
+            }
+        </div>
+        <a asp-page="/Banking/AddPayment" class="btn btn-primary">Add Payment</a>
+    </div>
+
+    @if (Model.Items == null || Model.Items.Count == 0)
+    {
+        <div class="alert alert-info">No payments yet, add your first payment.</div>
+    }
+    else
+    {
+        <div class="table-responsive table-rounded">
+            <table class="table table-striped align-middle mb-0">
+                <thead><tr><th>Date</th><th>Client</th><th>Method</th><th class="text-end">Amount</th><th>Status</th></tr></thead>
+                <tbody>
+                @foreach(var p in Model.Items){
+                    var methodClass = p.Method?.ToLowerInvariant() switch {
+                        "cash" => "badge bg-secondary",
+                        "juice" => "badge bg-primary",
+                        "cheque" => "badge bg-warning text-dark",
+                        "blink" => "badge bg-info text-dark",
+                        "card" => "badge bg-success",
+                        _ => "badge bg-dark"
+                    };
+                    <tr>
+                        <td>@p.Date.ToLocalTime().ToString("g")</td>
+                        <td>@p.Client</td>
+                        <td><span class="@methodClass">@p.Method</span></td>
+                        <td class="text-end">@p.Amount.ToString("C")</td>
+                        <td>@p.Status</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -1,0 +1,38 @@
+@page
+@model Mango.Web.Pages.Banking.PurchaseOrdersModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles="ADMIN")]
+@section Styles { <link rel="stylesheet" href="~/css/banking.css" asp-append-version="true" /> }
+<div class="banking-shell">
+    <div class="titlebar">
+        <div>
+            <h2 class="mb-0">Purchase Orders</h2>
+            <div class="subtitle">Manage stock/vendor purchases</div>
+        </div>
+        <a asp-page="/Banking/NewPurchaseOrder" class="btn btn-primary">New Order</a>
+    </div>
+
+    <div class="table-responsive table-rounded">
+        <table class="table table-striped align-middle mb-0">
+            <thead><tr><th>ID</th><th>Supplier</th><th>Date</th><th>Status</th><th class="text-end">Total</th><th></th></tr></thead>
+            <tbody>
+            @foreach(var po in Model.Items){
+                <tr>
+                    <td>@po.Id</td>
+                    <td>@po.Supplier</td>
+                    <td>@po.Date.ToLocalTime().ToString("d")</td>
+                    <td>@po.Status</td>
+                    <td class="text-end">@po.Total.ToString("C")</td>
+                    <td class="text-end">
+                        <form method="post" asp-page-handler="Approve" asp-route-id="@po.Id" class="d-inline">
+                            <button class="btn btn-success btn-sm" type="submit">Approve</button>
+                        </form>
+                        <form method="post" asp-page-handler="Cancel" asp-route-id="@po.Id" class="d-inline">
+                            <button class="btn btn-danger btn-sm" type="submit">Cancel</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

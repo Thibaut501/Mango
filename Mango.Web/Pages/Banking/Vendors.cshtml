@@ -1,0 +1,28 @@
+@page
+@model Mango.Web.Pages.Banking.VendorsModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles="ADMIN")]
+@section Styles { <link rel="stylesheet" href="~/css/banking.css" asp-append-version="true" /> }
+<div class="banking-shell">
+    <div class="titlebar">
+        <div>
+            <h2 class="mb-0">Vendors / Suppliers</h2>
+            <div class="subtitle">Manage supplier profiles and history</div>
+        </div>
+    </div>
+
+    <div class="table-responsive table-rounded">
+        <table class="table table-striped align-middle mb-0">
+            <thead><tr><th>Name</th><th>Contact</th><th>Last Order</th><th class="text-end">Outstanding</th></tr></thead>
+            <tbody>
+            @foreach(var v in Model.Items){
+                <tr>
+                    <td>@v.Name</td>
+                    <td>@v.Contact</td>
+                    <td>@(v.LastOrderDate?.ToLocalTime().ToString("d") ?? "-")</td>
+                    <td class="text-end">@v.OutstandingBalance.ToString("C")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

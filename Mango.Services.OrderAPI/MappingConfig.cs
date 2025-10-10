@@ -1,38 +1,27 @@
 ﻿using AutoMapper;
-using Mango.Services.OrderAPI.Models;
-using Mango.Services.OrderAPI.Models.Dto;
+
+// Create handy aliases so we never accidentally reference DTOs/entities from another service.
+using OrderModels = Mango.Services.OrderAPI.Models;
+using OrderDtos   = Mango.Services.OrderAPI.Models.Dto;
 
 namespace Mango.Services.OrderAPI
 {
-    public class MappingConfig
+    // IMPORTANT: inherit from Profile so assembly scanning can find this.
+    public class MappingConfig : Profile
     {
-        public static MapperConfiguration RegisterMaps()
+        public MappingConfig()
         {
-            var mappingConfig = new MapperConfiguration(config =>
-            {
-                // Cart ↔ OrderHeader
-                config.CreateMap<OrderHeaderDto, CartHeaderDto>()
-                    .ForMember(dest => dest.CartTotal, opt => opt.MapFrom(src => src.OrderTotal))
-                    .ReverseMap();
+            // Core maps required by OrderAPI
+            CreateMap<OrderModels.OrderHeader, OrderDtos.OrderHeaderDto>()
+                .ForMember(d => d.OrderDetails, o => o.MapFrom(s => s.OrderDetails))
+                .ReverseMap();
 
-                config.CreateMap<CartDetailsDto, OrderDetailsDto>()
-                    .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
-                    .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Product.Price));
+            CreateMap<OrderModels.OrderDetails, OrderDtos.OrderDetailsDto>()
+                .ReverseMap();
 
-                config.CreateMap<OrderDetailsDto, CartDetailsDto>();
-
-                // ✅ OrderHeader → OrderHeaderDto with nested OrderDetails
-                config.CreateMap<OrderHeader, OrderHeaderDto>()
-                    .ForMember(dest => dest.OrderDetails, opt => opt.MapFrom(src => src.OrderDetails));
-
-                config.CreateMap<OrderHeaderDto, OrderHeader>();
-
-                // ✅ OrderDetails mappings
-                config.CreateMap<OrderDetails, OrderDetailsDto>();
-                config.CreateMap<OrderDetailsDto, OrderDetails>();
-            });
-
-            return mappingConfig;
+            // If your DTOs include nested product info or different names, add ForMember() here.
+            // Example:
+            // .ForMember(d => d.Total, o => o.MapFrom(s => s.OrderTotal));
         }
     }
 }

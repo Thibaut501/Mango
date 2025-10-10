@@ -1,0 +1,38 @@
+@page
+@model Mango.Web.Pages.Banking.TransfersModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles="ADMIN")]
+@section Styles { <link rel="stylesheet" href="~/css/banking.css" asp-append-version="true" /> }
+<div class="banking-shell">
+    <div class="titlebar">
+        <div>
+            <h2 class="mb-0">Transfers</h2>
+            <div class="subtitle">Move funds between accounts</div>
+        </div>
+        <a asp-page="/Banking/NewTransfer" class="btn btn-primary">New Transfer</a>
+    </div>
+
+    <div class="table-responsive table-rounded">
+        <table class="table table-striped align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th class="text-end">Amount</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach(var t in Model.Items){
+                <tr>
+                    <td>@t.Date.ToLocalTime().ToString("g")</td>
+                    <td>@t.From</td>
+                    <td>@t.To</td>
+                    <td class="text-end">@t.Amount.ToString("C")</td>
+                    <td>@t.Notes</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

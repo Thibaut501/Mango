@@ -1,0 +1,20 @@
+@page
+@model Mango.Web.Pages.Banking.NewPurchaseOrderModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles="ADMIN")]
+<h2>New Purchase Order</h2>
+<form method="post" class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="Input.Supplier" class="form-label"></label>
+        <input asp-for="Input.Supplier" class="form-control" />
+        <span asp-validation-for="Input.Supplier" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Input.Total" class="form-label"></label>
+        <input asp-for="Input.Total" class="form-control" />
+    </div>
+    <div class="col-12">
+        <button class="btn btn-primary">Create</button>
+        <a asp-page="/Banking/PurchaseOrders" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+@section Scripts{<partial name="_ValidationScriptsPartial"/>}

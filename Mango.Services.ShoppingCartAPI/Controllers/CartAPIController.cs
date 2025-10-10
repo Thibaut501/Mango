@@ -34,19 +34,34 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         {
             try
             {
+                // Gracefully handle users with no cart yet
+                var cartHeaderEntity = await _db.CartHeaders.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == userId);
+                if (cartHeaderEntity == null)
+                {
+                    _response.Result = new CartDto
+                    {
+                        CartHeader = new CartHeaderDto { UserId = userId, CartTotal = 0, Discount = 0 },
+                        CartDetails = new List<CartDetailsDto>()
+                    };
+                    return _response;
+                }
+
                 CartDto cart = new()
                 {
-                    CartHeader = _mapper.Map<CartHeaderDto>(_db.CartHeaders.First(u => u.UserId == userId))
+                    CartHeader = _mapper.Map<CartHeaderDto>(cartHeaderEntity)
                 };
-                cart.CartDetails = _mapper.Map<IEnumerable<CartDetailsDto>>(
-                    _db.CartDetails.Where(u => u.CartHeaderId == cart.CartHeader.CartHeaderId));
+
+                var detailsEntities = await _db.CartDetails.AsNoTracking()
+                    .Where(u => u.CartHeaderId == cart.CartHeader.CartHeaderId)
+                    .ToListAsync();
+                cart.CartDetails = _mapper.Map<IEnumerable<CartDetailsDto>>(detailsEntities);
 
                 IEnumerable<ProductDto> productDtos = await _productService.GetProducts();
 
                 foreach (var item in cart.CartDetails)
                 {
-                    item.Product = productDtos.FirstOrDefault(u => u.ProductId == item.ProductId);
-                    cart.CartHeader.CartTotal += (item.Count * item.Product.Price);
+                    item.Product = productDtos.FirstOrDefault(u => u.ProductId == item.ProductId) ?? new ProductDto();
+                    cart.CartHeader.CartTotal += (item.Count * (item.Product?.Price ?? 0));
                 }
 
                 if (!string.IsNullOrEmpty(cart.CartHeader.CouponCode))
@@ -76,11 +91,25 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         [HttpPost("ApplyCoupon")]
         public async Task<object> ApplyCoupon([FromBody] CartDto cartDto)
         {
-            var cartFromDb = await _db.CartHeaders.FirstAsync(u => u.UserId == cartDto.CartHeader.UserId);
-            cartFromDb.CouponCode = cartDto.CartHeader.CouponCode;
-            _db.CartHeaders.Update(cartFromDb);
-            await _db.SaveChangesAsync();
-            _response.Result = true;
+            try
+            {
+                var cartFromDb = await _db.CartHeaders.FirstOrDefaultAsync(u => u.UserId == cartDto.CartHeader.UserId);
+                if (cartFromDb == null)
+                {
+                    _response.IsSuccess = false;
+                    _response.Message = "Cart not found for user.";
+                    return _response;
+                }
+                cartFromDb.CouponCode = cartDto.CartHeader.CouponCode;
+                _db.CartHeaders.Update(cartFromDb);
+                await _db.SaveChangesAsync();
+                _response.Result = true;
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Message = ex.Message;
+            }
             return _response;
         }
 
@@ -90,7 +119,13 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         {
             try
             {
-                var cartFromDb = await _db.CartHeaders.FirstAsync(u => u.UserId == cartDto.CartHeader.UserId);
+                var cartFromDb = await _db.CartHeaders.FirstOrDefaultAsync(u => u.UserId == cartDto.CartHeader.UserId);
+                if (cartFromDb == null)
+                {
+                    _response.IsSuccess = false;
+                    _response.Message = "Cart not found for user.";
+                    return _response;
+                }
                 cartFromDb.CouponCode = "";
                 _db.CartHeaders.Update(cartFromDb);
                 await _db.SaveChangesAsync();
@@ -161,11 +196,17 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         {
             try
             {
-                var cartDetails = _db.CartDetails.First(u => u.CartDetailsId == cartDetailsId);
+                var cartDetails = await _db.CartDetails.FirstOrDefaultAsync(u => u.CartDetailsId == cartDetailsId);
+                if (cartDetails == null)
+                {
+                    _response.IsSuccess = false;
+                    _response.Message = "Cart item not found.";
+                    return _response;
+                }
 
-                int totalItems = _db.CartDetails
+                int totalItems = await _db.CartDetails
                     .Where(u => u.CartHeaderId == cartDetails.CartHeaderId)
-                    .Count();
+                    .CountAsync();
 
                 _db.CartDetails.Remove(cartDetails);
 

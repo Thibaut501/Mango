@@ -33,13 +33,17 @@ namespace Mango.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(LoginRequestDto obj)
         {
-            ResponseDto responseDto = await _authService.LoginAsync(obj);
+            ResponseDto? responseDto = await _authService.LoginAsync(obj);
 
 
-            if (responseDto!= null && responseDto.IsSuccess)
+            if (responseDto != null && responseDto.IsSuccess && responseDto.Result != null)
             {
-                LoginResponseDto loginResponseDto =
-                    JsonConvert.DeserializeObject<LoginResponseDto>(Convert.ToString(responseDto.Result));
+                var loginResponseDto = JsonConvert.DeserializeObject<LoginResponseDto>(Convert.ToString(responseDto.Result));
+                if (loginResponseDto == null || string.IsNullOrWhiteSpace(loginResponseDto.Token))
+                {
+                    TempData["error"] = "Invalid login response.";
+                    return View(obj);
+                }
 
                 await SignInUser(loginResponseDto);
 
@@ -47,22 +51,11 @@ namespace Mango.Web.Controllers
                 return RedirectToAction("Index", "Home");
             }
             else
-               
-  
-                {
-                    TempData["error"] = responseDto.Message;
-                     return View(obj);
-                }
+            {
+                TempData["error"] = responseDto?.Message ?? "Login failed.";
+                return View(obj);
             }
-
-
-          
-
-
-
-
-        
-
+        }
 
         [HttpGet]
         public IActionResult Register()
@@ -84,14 +77,12 @@ namespace Mango.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(RegistrationRequestDto obj)
         {
-            ResponseDto result = await _authService.RegisterAsync(obj);
-            ResponseDto assignRole;
+            ResponseDto? result = await _authService.RegisterAsync(obj);
+            ResponseDto? assignRole;
 
-            if (result!= null && result.IsSuccess)
+            if (result != null && result.IsSuccess)
 
             {
-                
-
                 if (string.IsNullOrEmpty(obj.Role))
                 {
                     obj.Role = SD.RoleCustomer;
@@ -100,16 +91,18 @@ namespace Mango.Web.Controllers
                 if (assignRole != null && assignRole.IsSuccess)
 
                 {
-                 
-
                     TempData["success"] = "Registration Successful";
                     return RedirectToAction(nameof(Login));
+                }
+                else
+                {
+                    TempData["error"] = assignRole?.Message ?? "Failed to assign role.";
                 }
 
             }
             else
             {
-                TempData["error"] = result.Message;
+                TempData["error"] = result?.Message ?? "Registration failed.";
             }
 
             var roleList = new List<SelectListItem>()
@@ -142,23 +135,35 @@ namespace Mango.Web.Controllers
             var jwt = handler.ReadJwtToken(model.Token);
 
             var identity = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
-            identity.AddClaim(new Claim(JwtRegisteredClaimNames.Email,
-                jwt.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Email).Value));
-            identity.AddClaim(new Claim(JwtRegisteredClaimNames.Sub,
-                jwt.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Email).Value));
-            identity.AddClaim(new Claim(JwtRegisteredClaimNames.Name,
-                jwt.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Name).Value));
 
+            // Extract claims safely
+            string? email = jwt.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Email)?.Value;
+            string? subject = jwt.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            string? name = jwt.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Name)?.Value;
 
-            identity.AddClaim(new Claim( ClaimTypes.Name,
-                jwt.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Email).Value));
-            identity.AddClaim(new Claim(ClaimTypes.Role,
-                jwt.Claims.FirstOrDefault(u => u.Type == "role").Value));
+            if (!string.IsNullOrEmpty(email))
+            {
+                identity.AddClaim(new Claim(JwtRegisteredClaimNames.Email, email));
+                identity.AddClaim(new Claim(ClaimTypes.Name, email));
+            }
 
+            if (!string.IsNullOrEmpty(subject))
+            {
+                identity.AddClaim(new Claim(JwtRegisteredClaimNames.Sub, subject));
+                identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, subject));
+            }
 
+            if (!string.IsNullOrEmpty(name))
+            {
+                identity.AddClaim(new Claim(JwtRegisteredClaimNames.Name, name));
+            }
 
-
-
+            // Role(s)
+            var roleClaim = jwt.Claims.Where(u => u.Type == "role" || u.Type == ClaimTypes.Role);
+            foreach (var rc in roleClaim)
+            {
+                identity.AddClaim(new Claim(ClaimTypes.Role, rc.Value));
+            }
 
             var principal = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);

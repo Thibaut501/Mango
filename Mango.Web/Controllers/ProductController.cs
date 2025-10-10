@@ -28,7 +28,7 @@ namespace Mango.Web.Controllers
 
             return View(list);
         }
-        public async Task<IActionResult> ProductCreate()
+        public IActionResult ProductCreate()
         {
             return View();
         }
@@ -59,7 +59,7 @@ namespace Mango.Web.Controllers
                 ProductDto? model = JsonConvert.DeserializeObject<ProductDto>(Convert.ToString(response.Result));
                 return View(model);
             }
-            
+
             else
             {
                 TempData["error"] = response?.Message;

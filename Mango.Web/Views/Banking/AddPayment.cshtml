@@ -1,0 +1,27 @@
+@model Mango.Web.Models.PaymentDto
+<h2>Add Payment</h2>
+<form method="post" class="row g-3">
+    <div class="col-md-4">
+        <label asp-for="Client" class="form-label"></label>
+        <input asp-for="Client" class="form-control" />
+        <span asp-validation-for="Client" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Method" class="form-label"></label>
+        <select asp-for="Method" class="form-select">
+            <option>Cash</option>
+            <option>Card</option>
+            <option>Bank</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Amount" class="form-label"></label>
+        <input asp-for="Amount" class="form-control" />
+        <span asp-validation-for="Amount" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <button class="btn btn-primary">Save</button>
+        <a asp-action="Payments" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+@section Scripts{<partial name="_ValidationScriptsPartial"/>}

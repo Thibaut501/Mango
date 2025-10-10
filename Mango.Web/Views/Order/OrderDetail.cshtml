@@ -1,6 +1,24 @@
 ﻿@model OrderHeaderDto
 @using Mango.Web.Utility
 
+@{
+    // ---- Compute the time to DISPLAY (Mauritius, UTC+04:00) ----
+    TimeZoneInfo muTz;
+    try { muTz = TimeZoneInfo.FindSystemTimeZoneById("Mauritius Standard Time"); }
+    catch { muTz = TimeZoneInfo.FindSystemTimeZoneById("Indian/Mauritius"); }
+
+    // Normalize your model value to UTC first (handles Local/Unspecified correctly)
+    DateTime orderUtc = Model.OrderTime.Kind switch
+    {
+        DateTimeKind.Utc => Model.OrderTime,
+        DateTimeKind.Local => Model.OrderTime.ToUniversalTime(),
+        _ => DateTime.SpecifyKind(Model.OrderTime, DateTimeKind.Utc)
+    };
+
+    // Convert to Mauritius for display
+    DateTime orderMu = TimeZoneInfo.ConvertTimeFromUtc(orderUtc, muTz);
+}
+
 <form method="post">
     <br />
     <input asp-for="OrderHeaderId" hidden />
@@ -9,10 +27,10 @@
             <div class="card-header bg-dark text-light ml-0">
                 <div class="container row">
                     <div class="col-12 d-none d-md-block col-md-6 pb-1 text-warning h3">
-                        Order Summary
+                        Résumé de la commande
                     </div>
                     <div class="col-12 col-md-4 offset-md-2 text-right mt-2">
-                        <a asp-action="OrderIndex" class="btn btn-warning form-control btn-sm">Back to Orders</a>
+                        <a asp-action="OrderIndex" class="btn btn-warning form-control btn-sm">Retour aux commandes</a>
                     </div>
                 </div>
             </div>
@@ -22,75 +40,70 @@
                         <div class="col-12 col-lg-6 pb-4">
                             <!-- Customer Info -->
                             <div class="row my-1">
-                                <div class="col-3">Name</div>
-                                <div class="col-9">
+                                <div class="col-5 col-md-4">Nom</div>
+                                <div class="col-7 col-md-8">
                                     <input asp-for="Name" readonly class="form-control" />
                                 </div>
                             </div>
 
                             <div class="row my-1">
-                                <div class="col-3">Phone</div>
-                                <div class="col-9">
+                                <div class="col-5 col-md-4">Téléphone</div>
+                                <div class="col-7 col-md-8">
                                     <input asp-for="Phone" readonly class="form-control" />
                                 </div>
                             </div>
 
                             <div class="row my-1">
-                                <div class="col-3">Email</div>
-                                <div class="col-9">
+                                <div class="col-5 col-md-4">Messagerie électronique</div>
+                                <div class="col-7 col-md-8">
                                     <input asp-for="Email" readonly class="form-control" />
                                 </div>
                             </div>
 
+                            <!-- Date de la commande (show Mauritius, post UTC) -->
                             <div class="row my-1">
-                                <div class="col-3">Order Date</div>
-                                <div class="col-9">
-                                    <input asp-for="OrderTime" class="form-control" type="datetime-local"
-                                           value="@Model.OrderTime.ToString("yyyy-MM-ddTHH:mm")" />
-
-
-                                    
+                                <div class="col-5 col-md-4">Date de la commande</div>
+                                <div class="col-7 col-md-8">
+                                    <!-- Visible: Mauritius time (not bound) -->
+                                    <input class="form-control" type="datetime-local"
+                                           value="@orderMu.ToString("yyyy-MM-ddTHH:mm")" readonly />
+                                    <!-- Hidden: actual UTC value that posts back -->
+                                    <input type="hidden" asp-for="OrderTime" value='@orderUtc.ToString("o")' />
                                 </div>
                             </div>
 
-                            @if (User.IsInRole(SD.RoleAdmin))
-                            {
-                                <div class="row my-1">
-                                    <div class="col-3">Session ID</div>
-                                    <div class="col-9">
-                                        <input asp-for="StripeSessionId" readonly class="form-control" />
-                                    </div>
+                            <div class="row my-1">
+                                <div class="col-5 col-md-4">Session ID</div>
+                                <div class="col-7 col-md-8">
+                                    <input asp-for="StripeSessionId" readonly class="form-control" />
                                 </div>
-                                <div class="row my-1">
-                                    <div class="col-3">Payment Intent ID</div>
-                                    <div class="col-9">
-                                        <input asp-for="PaymentIntentId" readonly class="form-control" />
-                                    </div>
+                            </div>
+                            <div class="row my-1">
+                                <div class="col-5 col-md-4">ID d'intention de paiement</div>
+                                <div class="col-7 col-md-8">
+                                    <input asp-for="PaymentIntentId" readonly class="form-control" />
                                 </div>
-                            }
+                            </div>
 
                             <div class="row my-1">
-                                <div class="col-3">Order Status</div>
-                                <div class="col-9">
+                                <div class="col-5 col-md-4">Statut de la commande</div>
+                                <div class="col-7 col-md-8">
                                     <input asp-for="Status" class="form-control" readonly />
-                                 
                                 </div>
                             </div>
-
-
                         </div>
 
                         <!-- Order Summary -->
                         <div class="col-12 col-lg-5 offset-lg-1">
                             <h4 class="d-flex justify-content-between align-items-center mb-3">
-                                <span class="text-warning">Order Summary</span>
+                                <span class="text-warning">Résumé de la commande</span>
                             </h4>
-                            <label class="bg-info text-dark text-center form-control my-2">Order Status-@Model.Status</label>
-                               
-                          
+                            <label class="bg-info text-dark text-center form-control my-2">
+                                Statut de la commande @Model.Status
+                            </label>
 
                             <ul class="list-group mb-3">
-                                @if(Model.OrderDetails != null)
+                                @if (Model.OrderDetails != null)
                                 {
                                     foreach (var detail in Model.OrderDetails)
                                     {
@@ -98,8 +111,8 @@
                                             <div class="row container">
                                                 <div class="col-8">
                                                     <h6 class="my-0 text-white-50">@detail.ProductName</h6>
-                                                    <small class="text-muted">Price: @detail.Price.ToString("c")</small><br />
-                                                    <small class="text-muted">Quantity: @detail.Count</small>
+                                                    <small class="text-muted">Prix : @detail.Price.ToString("c")</small><br />
+                                                    <small class="text-muted">Nombre : @detail.Count</small>
                                                 </div>
                                                 <div class="col-4 text-end">
                                                     <p class="text-success">@((detail.Count * detail.Price).ToString("c"))</p>
@@ -108,26 +121,19 @@
                                         </li>
                                     }
                                 }
-                               
-                                <!-- Text Section Between Order Status and Total -->
+
+                                <!-- Headers row between Order Status and Total -->
                                 <li class="list-group-item bg-dark">
                                     <div class="row text-light px-3">
-                                        <!-- Left Side -->
                                         <div class="col-8">
-                                            <p class="mb-1 text-muted">Price : Price</p>
-                                            <p class="mb-1 text-muted">Quantity : Count</p>
+                                            <p class="mb-1 text-muted">Prix : Prix</p>
+                                            <p class="mb-1 text-muted">Quantité : Composez</p>
                                         </div>
-
-                                        <!-- Right Side -->
                                         <div class="col-4 text-end d-flex align-items-start justify-content-end">
-                                            <p class="mb-1 text-success fw-bold">Count * Price</p>
+                                            <p class="mb-1 text-success fw-bold">Nombre * Prix</p>
                                         </div>
                                     </div>
                                 </li>
-
-
-
-
 
                                 <li class="list-group-item bg-primary">
                                     <div class="row container">
@@ -135,29 +141,24 @@
                                             <h5 class="text-white">TOTAL</h5>
                                         </div>
                                         <div class="col-6 text-end">
-                                            <h5 class="text-white">OrderTotal</h5>
-                                            </div>
+                                            <h5 class="text-white">@Model.OrderTotal.ToString("c")</h5>
+                                        </div>
                                     </div>
                                 </li>
                             </ul>
 
-                            <!-- Action Buttons -->
-                            <button type="submit" class="btn btn-success form-control my-1">Ready for Pickup</button>
-                            <button type="submit" class="btn btn-danger form-control my-1">Cancel Order</button>
-
+                            <!-- Admin status-driven buttons -->
                             @if (User.IsInRole(SD.RoleAdmin))
                             {
                                 if (Model.Status == SD.Status_Approved)
                                 {
-                                    <button asp-action="OrderReadyForPickup" asp-route-orderId="@Model.OrderHeaderId" type="submit" class="btn btn-success form-control my-1">Ready for Pickup</button>
+                                    <button asp-action="OrderReadyForPickup" asp-route-orderId="@Model.OrderHeaderId" type="submit" class="btn btn-success form-control my-1">Prêt pour le ramassage</button>
+                                    <button asp-action="CancelOrder" asp-route-orderId="@Model.OrderHeaderId" type="submit" class="btn btn-danger form-control my-1">Annuler la commande</button>
                                 }
-                                if (Model.Status == SD.Status_ReadyForPickup)
+                                else if (Model.Status == SD.Status_ReadyForPickup)
                                 {
-                                    <button asp-action="CompleteOrder" asp-route-orderId="@Model.OrderHeaderId" type="submit" class="btn btn-success form-control my-1">Complete Order</button>
-                                }
-                                if (Model.Status == SD.Status_Approved || Model.Status == SD.Status_ReadyForPickup)
-                                {
-                                    <button asp-action="CancelOrder" asp-route-orderId="@Model.OrderHeaderId" type="submit" class="btn btn-danger form-control my-1">Cancel Order</button>
+                                    <button asp-action="CompleteOrder" asp-route-orderId="@Model.OrderHeaderId" type="submit" class="btn btn-success form-control my-1">Commande terminée</button>
+                                    <button asp-action="CancelOrder" asp-route-orderId="@Model.OrderHeaderId" type="submit" class="btn btn-danger form-control my-1">Annuler la commande</button>
                                 }
                             }
                         </div>

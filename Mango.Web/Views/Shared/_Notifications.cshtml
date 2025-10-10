@@ -1,16 +1,22 @@
-﻿@if (TempData["error"] != null)
-{
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha512-lbwH47l/tPXJYG9AcFNoJaTMhGvYWhVM9YI43CT+uteTRRaiLCui8snIgyAN8XWgNjNhCqlAUdzZptso6OCoFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script type="text/javascript">
-        toastr.error('@TempData["error"]')
-    </script>
+﻿@{
+    var success = TempData["success"]?.ToString();
+    var successCap = TempData["Success"]?.ToString();
+    var error = TempData["error"]?.ToString();
+    var errorCap = TempData["Error"]?.ToString();
 }
-@if (TempData["success"] != null)
+@if (!string.IsNullOrWhiteSpace(success))
 {
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha512-lbwH47l/tPXJYG9AcFNoJaTMhGvYWhVM9YI43CT+uteTRRaiLCui8snIgyAN8XWgNjNhCqlAUdzZptso6OCoFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script type="text/javascript">
-        toastr.success('@TempData["success"]')
-    </script>
+    <div data-temp-success="@success" hidden></div>
+}
+@if (!string.IsNullOrWhiteSpace(successCap))
+{
+    <div data-temp-success="@successCap" hidden></div>
+}
+@if (!string.IsNullOrWhiteSpace(error))
+{
+    <div data-temp-error="@error" hidden></div>
+}
+@if (!string.IsNullOrWhiteSpace(errorCap))
+{
+    <div data-temp-error="@errorCap" hidden></div>
 }

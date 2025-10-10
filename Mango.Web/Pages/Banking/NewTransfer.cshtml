@@ -1,0 +1,30 @@
+@page
+@model Mango.Web.Pages.Banking.NewTransferModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles="ADMIN")]
+<h2>New Transfer</h2>
+<form method="post" class="row g-3">
+    <div class="col-md-4">
+        <label asp-for="Input.From" class="form-label"></label>
+        <input asp-for="Input.From" class="form-control" />
+        <span asp-validation-for="Input.From" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Input.To" class="form-label"></label>
+        <input asp-for="Input.To" class="form-control" />
+        <span asp-validation-for="Input.To" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Input.Amount" class="form-label"></label>
+        <input asp-for="Input.Amount" class="form-control" />
+        <span asp-validation-for="Input.Amount" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Input.Notes" class="form-label"></label>
+        <textarea asp-for="Input.Notes" class="form-control" rows="3"></textarea>
+    </div>
+    <div class="col-12">
+        <button class="btn btn-primary">Save</button>
+        <a asp-page="/Banking/Transfers" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+@section Scripts{<partial name="_ValidationScriptsPartial"/>}

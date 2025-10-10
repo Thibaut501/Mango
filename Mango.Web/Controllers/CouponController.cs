@@ -16,7 +16,7 @@ namespace Mango.Web.Controllers
         {
             List<CouponDto> list = new();
 
-            ResponseDto response = await _couponService.GetAllCouponsAsync();
+            ResponseDto? response = await _couponService.GetAllCouponsAsync();
 
             if (response != null && response.IsSuccess)
             {
@@ -25,7 +25,7 @@ namespace Mango.Web.Controllers
             }
             return View(list);
         }
-        public async Task<IActionResult> CouponCreate()
+        public IActionResult CouponCreate()
         {
             return View();
         }

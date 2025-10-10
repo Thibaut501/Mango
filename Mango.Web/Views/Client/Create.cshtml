@@ -1,0 +1,40 @@
+@model Mango.Web.Models.ClientDto
+@{
+    ViewData["Title"] = "New Client";
+}
+<h2>New Client</h2>
+<form method="post" class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Phone" class="form-label"></label>
+        <input asp-for="Phone" class="form-control" />
+        <span asp-validation-for="Phone" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Tier</label>
+        <select asp-for="Tier" class="form-select">
+            <option>Standard</option>
+            <option>Silver</option>
+            <option>Gold</option>
+            <option>Platinum</option>
+        </select>
+    </div>
+    <div class="col-12">
+        <label asp-for="Notes" class="form-label"></label>
+        <textarea asp-for="Notes" class="form-control" rows="4"></textarea>
+    </div>
+    <div class="col-12">
+        <button class="btn btn-primary">Create</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+@section Scripts{<partial name="_ValidationScriptsPartial"/>}

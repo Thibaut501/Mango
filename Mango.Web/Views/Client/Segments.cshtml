@@ -1,0 +1,37 @@
+@model Mango.Web.Models.SegmentsVm
+@{
+    ViewData["Title"] = "Segments";
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Client Segments</h2>
+    <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
+</div>
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-6">
+        <input type="text" name="filter" value="@Model.Filter" class="form-control" placeholder="Filter expression (e.g., Tier:Gold)" />
+    </div>
+    <div class="col-md-3">
+        <select name="action" class="form-select">
+            <option value="">Bulk action...</option>
+            <option>Send Offer</option>
+            <option>Send Survey</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-outline-primary w-100" type="submit">Apply</button>
+    </div>
+</form>
+<table class="table table-striped">
+    <thead><tr><th>Name</th><th>Description</th><th>Filter</th><th class="text-end">Count</th></tr></thead>
+    <tbody>
+        @foreach (var s in Model.Segments)
+        {
+            <tr>
+                <td>@s.Name</td>
+                <td>@s.Description</td>
+                <td><code>@s.Filter</code></td>
+                <td class="text-end">@s.Count</td>
+            </tr>
+        }
+    </tbody>
+</table>

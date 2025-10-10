@@ -1,0 +1,38 @@
+@page
+@model Mango.Web.Pages.Banking.ReconciliationModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles="ADMIN")]
+@section Styles { <link rel="stylesheet" href="~/css/banking.css" asp-append-version="true" /> }
+<div class="banking-shell">
+    <div class="titlebar">
+        <div>
+            <h2 class="mb-0">Reconciliation / Audit</h2>
+            <div class="subtitle">Cross-check transactions vs. reports</div>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-3">
+      @foreach(var tab in new[]{"Daily","Weekly","Monthly"}){
+        <li class="nav-item">
+            <a class="nav-link @(Model.Tab==tab?"active":"")" asp-page="/Banking/Reconciliation" asp-route-tab="@tab">@tab</a>
+        </li>
+      }
+    </ul>
+
+    <div class="table-responsive table-rounded">
+        <table class="table table-striped align-middle mb-0">
+            <thead><tr><th>Label</th><th class="text-end">Transactions</th><th class="text-end">Total In</th><th class="text-end">Total Out</th><th>Status</th></tr></thead>
+            <tbody>
+            @foreach(var s in Model.Summaries){
+                var statusClass = s.Status=="OK"?"text-success":(s.Status=="Mismatch"?"text-danger":"text-warning");
+                <tr class="@statusClass">
+                    <td>@s.Label</td>
+                    <td class="text-end">@s.Transactions</td>
+                    <td class="text-end">@s.TotalIn.ToString("C")</td>
+                    <td class="text-end">@s.TotalOut.ToString("C")</td>
+                    <td>@s.Status</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

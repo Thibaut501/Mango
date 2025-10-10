@@ -6,6 +6,7 @@ using Mango.Services.OrderAPI.Utility;
 using Mango.Services.ShoppingCartAPI.Service;
 using Mango.Services.ShoppingCartAPI.Service.IService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -19,10 +20,8 @@ builder.Services.AddDbContext<AppDbContext>(option =>
     option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-// ✅ AutoMapper
-IMapper mapper = MappingConfig.RegisterMaps().CreateMapper();
-builder.Services.AddSingleton(mapper);
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+// ✅ AutoMapper (single registration; remove any RegisterMaps/singleton usage)
+builder.Services.AddAutoMapper(typeof(MappingConfig));
 
 // ✅ Services + HttpClient
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -35,6 +34,12 @@ builder.Services.AddHttpClient("Product", u =>
 }).AddHttpMessageHandler<BackendApiAuthenticationHttpClientHandler>();
 
 builder.Services.AddControllers();
+
+// Avoid automatic 400 to return detailed ResponseDto messages
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
 
 // ✅ JWT Authentication
 var secret = builder.Configuration["ApiSettings:Secret"];
@@ -79,17 +84,30 @@ builder.Services.AddSwaggerGen(option =>
                     Id = JwtBearerDefaults.AuthenticationScheme
                 }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
 });
 
 // ✅ Stripe
-Stripe.StripeConfiguration.ApiKey = builder.Configuration.GetSection("Stripe:SecretKey").Get<string>();
+var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
+if (string.IsNullOrWhiteSpace(stripeSecretKey))
+{
+    throw new InvalidOperationException("Stripe:SecretKey manquant dans la configuration.");
+}
+Stripe.StripeConfiguration.ApiKey = stripeSecretKey;
 
 var app = builder.Build();
 
-// ✅ Apply Migrations
+// (Optional) Validate AutoMapper configuration at startup (dev only recommended)
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var mapper = scope.ServiceProvider.GetRequiredService<IMapper>();
+    mapper.ConfigurationProvider.AssertConfigurationIsValid();
+}
+
+// ✅ Apply pending EF Core migrations
 ApplyMigration();
 
 if (app.Environment.IsDevelopment())

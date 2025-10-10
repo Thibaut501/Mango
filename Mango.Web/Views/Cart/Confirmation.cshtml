@@ -1,7 +1,64 @@
 ﻿@model int
-<div class="text-center">
+<div class="confirmation-page text-center">
     <h1 class="text-info pt-4">Congratulations! You are one step closer to amazing food.</h1>
     <p class="pb-3">We have received your order and will be ready in 30minutes during regular business hours!</p>
-    <h4 class="text-warning pb-3">Order ID - @Model</h4>
-    <img src="/images/order.PNG" width="80%" />
+
+    <div class="order-status-row pb-3">
+        <h4 class="text-warning mb-0">Order ID - @Model</h4>
+        @if ((bool?)ViewBag.PaymentSuccess == true)
+        {
+            <span class="status-pill success">@ViewBag.PaymentMessage</span>
+        }
+        else if (ViewBag.PaymentSuccess != null)
+        {
+            <span class="status-pill error">@ViewBag.PaymentMessage</span>
+        }
+        else
+        {
+            <span id="payment-status" class="status-pill" style="display:none"></span>
+        }
+    </div>
+
+    <button id="btn-validate" class="btn btn-success mb-3" style="display:@(ViewBag.PaymentSuccess == null ? "inline-block" : "none")">Traitement</button>
+
+    <img src="@Url.Content("~/images/order.PNG")" width="80%" alt="Order" onerror="this.style.display='none'" />
 </div>
+
+@section Scripts{
+<script>
+    (function(){
+        var btn = document.getElementById('btn-validate');
+        var statusEl = document.getElementById('payment-status');
+        if(!btn) return; // already validated server-side
+        btn.addEventListener('click', function(){
+            btn.disabled = true;
+            btn.innerText = 'Traitement...';
+            fetch('/cart/ValidatePayment?orderId=@Model', { method: 'POST' })
+                .then(function(r){ return r.json(); })
+                .then(function(res){
+                    if(!statusEl) return;
+                    statusEl.style.display = 'inline-block';
+                    statusEl.classList.remove('success','error');
+                    if(res && res.success){
+                        statusEl.classList.add('success');
+                        statusEl.textContent = res.message || 'Payment confirmed.';
+                    } else {
+                        statusEl.classList.add('error');
+                        statusEl.textContent = (res && res.message) || 'Payment not confirmed.';
+                    }
+                })
+                .catch(function(){
+                    if(!statusEl) return;
+                    statusEl.style.display = 'inline-block';
+                    statusEl.classList.remove('success');
+                    statusEl.classList.add('error');
+                    statusEl.textContent = 'Unable to validate payment.';
+                })
+                .finally(function(){
+                    btn.disabled = false;
+                    btn.innerText = 'Traitement';
+                });
+        });
+    })();
+</script>
+}

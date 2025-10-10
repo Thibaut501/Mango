@@ -1,0 +1,50 @@
+@page
+@model Mango.Web.Pages.Banking.ReceiptsModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles="ADMIN")]
+@section Styles { <link rel="stylesheet" href="~/css/banking.css" asp-append-version="true" /> }
+<div class="banking-shell">
+    <div class="titlebar">
+        <div>
+            <h2 class="mb-0">Receipts</h2>
+            <div class="subtitle">Filter card receipts and export</div>
+        </div>
+        <form method="get" class="d-flex align-items-end gap-2">
+            <div>
+                <label class="form-label">From</label>
+                <input type="date" name="from" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div>
+                <label class="form-label">To</label>
+                <input type="date" name="to" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div>
+                <label class="form-label">Method</label>
+                <select name="method" class="form-select">
+                    @foreach (var m in new[]{"Card","Cash","Juice","Cheque","Blink","Bank"}){
+                        <option value="@m" selected="@(string.Equals(Model.Method,m,StringComparison.OrdinalIgnoreCase)?"selected":null)">@m</option>
+                    }
+                </select>
+            </div>
+            <button class="btn btn-primary" type="submit">Apply</button>
+            <a asp-page-handler="ExportCsv" asp-route-from="@Model.From?.ToString("yyyy-MM-dd")" asp-route-to="@Model.To?.ToString("yyyy-MM-dd")" asp-route-method="@Model.Method" class="btn btn-outline-secondary">Export CSV</a>
+            <a asp-page-handler="ExportPdf" asp-route-from="@Model.From?.ToString("yyyy-MM-dd")" asp-route-to="@Model.To?.ToString("yyyy-MM-dd")" asp-route-method="@Model.Method" class="btn btn-outline-secondary">Export PDF</a>
+        </form>
+    </div>
+
+    <div class="table-responsive table-rounded">
+        <table class="table table-striped align-middle mb-0">
+            <thead><tr><th>Date</th><th>Client</th><th>Method</th><th>Reference</th><th class="text-end">Amount</th></tr></thead>
+            <tbody>
+            @foreach(var p in Model.Items){
+                <tr>
+                    <td>@p.Date.ToLocalTime().ToString("g")</td>
+                    <td>@p.Client</td>
+                    <td>@p.Method</td>
+                    <td>@p.Reference</td>
+                    <td class="text-end">@p.Amount.ToString("C")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

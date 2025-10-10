@@ -14,11 +14,13 @@ namespace Mango.Web.Controllers
     {
         private readonly ICartService _cartService;
         private readonly IOrderService _orderService;
+        private readonly IBankingService _bankingService;
 
-        public CartController(ICartService cartService, IOrderService orderService)
+        public CartController(ICartService cartService, IOrderService orderService, IBankingService bankingService)
         {
             _cartService = cartService;
             _orderService = orderService;
+            _bankingService = bankingService;
         }
 
         public async Task<IActionResult> CartIndex()
@@ -72,7 +74,8 @@ namespace Mango.Web.Controllers
             {
                 ApprovedUrl = domain + "cart/Confirmation?orderId=" + orderHeaderDto.OrderHeaderId,
                 CancelUrl = domain + "cart/checkout",
-                OrderHeader = orderHeaderDto
+                OrderHeaderId = orderHeaderDto.OrderHeaderId,
+                Currency = "usd"
             };
 
             var stripeResponse = await _orderService.CreateStripeSession(stripeRequestDto);
@@ -82,7 +85,7 @@ namespace Mango.Web.Controllers
                 return View(cart);
             }
 
-            StripeRequestDto? stripeResponseResult = JsonConvert.DeserializeObject<StripeRequestDto>(Convert.ToString(stripeResponse.Result));
+            var stripeResponseResult = JsonConvert.DeserializeObject<StripeRequestDto>(Convert.ToString(stripeResponse.Result));
 
             if (stripeResponseResult == null || string.IsNullOrEmpty(stripeResponseResult.StripeSessionUrl))
             {
@@ -90,13 +93,62 @@ namespace Mango.Web.Controllers
                 return View(cart);
             }
 
-            Response.Headers.Add("Location", stripeResponseResult.StripeSessionUrl);
-            return new StatusCodeResult(303);
+            // Use framework helper to redirect rather than manual 303 header
+            return Redirect(stripeResponseResult.StripeSessionUrl);
         }
 
-        public IActionResult Confirmation(int orderId)
+        [AllowAnonymous]
+        public async Task<IActionResult> Confirmation(int orderId)
         {
+            // Auto-validate on initial load so status appears immediately
+            var validation = await _orderService.ValidateStripeSession(orderId);
+            bool success = validation != null && validation.IsSuccess;
+            ViewBag.PaymentSuccess = success;
+            ViewBag.PaymentMessage = success ? "Payment confirmed." : (validation?.Message ?? "Payment not confirmed.");
+
+            // If paid, record a CARD payment into Banking so reports stay in sync
+            if (success)
+            {
+                // Fetch order for total and client name
+                var getOrder = await _orderService.GetOrder(orderId);
+                var order = getOrder != null && getOrder.IsSuccess && getOrder.Result != null
+                    ? JsonConvert.DeserializeObject<OrderHeaderDto>(Convert.ToString(getOrder.Result))
+                    : null;
+                if (order != null)
+                {
+                    var amount = (decimal)order.OrderTotal;
+                    var client = string.IsNullOrWhiteSpace(order.Name) ? (order.Email ?? "Customer") : order.Name;
+                    await _bankingService.RecordOrderPaymentAsync(orderId, client, amount, method: "Card", reference: order.PaymentIntentId ?? order.StripeSessionId);
+                }
+            }
+
             return View(orderId);
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> ValidatePayment([FromQuery] int orderId)
+        {
+            var validation = await _orderService.ValidateStripeSession(orderId);
+            bool success = validation != null && validation.IsSuccess;
+            string message = success ? "Payment confirmed." : (validation?.Message ?? "Payment not confirmed.");
+
+            if (success)
+            {
+                var getOrder = await _orderService.GetOrder(orderId);
+                var order = getOrder != null && getOrder.IsSuccess && getOrder.Result != null
+                    ? JsonConvert.DeserializeObject<OrderHeaderDto>(Convert.ToString(getOrder.Result))
+                    : null;
+                if (order != null)
+                {
+                    var amount = (decimal)order.OrderTotal;
+                    var client = string.IsNullOrWhiteSpace(order.Name) ? (order.Email ?? "Customer") : order.Name;
+                    await _bankingService.RecordOrderPaymentAsync(orderId, client, amount, method: "Card", reference: order.PaymentIntentId ?? order.StripeSessionId);
+                }
+            }
+
+            return Json(new { success, message });
         }
 
         public async Task<IActionResult> Remove(int cartDetailsId)

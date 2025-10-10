@@ -90,5 +90,33 @@ namespace Mango.Web.Controllers
 
             return Json(new { data = list.OrderByDescending(u => u.OrderHeaderId) });
         }
+
+        // Buttons
+        [Authorize(Roles = SD.RoleAdmin)]
+        [HttpPost]
+        public async Task<IActionResult> OrderReadyForPickup(int orderId)
+        {
+            var resp = await _orderService.UpdateOrderStatus(orderId, SD.Status_ReadyForPickup);
+            TempData[resp != null && resp.IsSuccess ? "success" : "error"] = resp?.IsSuccess == true ? "Order set to Ready for Pickup" : resp?.Message ?? "Failed";
+            return RedirectToAction(nameof(OrderDetail), new { orderId });
+        }
+
+        [Authorize(Roles = SD.RoleAdmin)]
+        [HttpPost]
+        public async Task<IActionResult> CompleteOrder(int orderId)
+        {
+            var resp = await _orderService.UpdateOrderStatus(orderId, SD.Status_Completed);
+            TempData[resp != null && resp.IsSuccess ? "success" : "error"] = resp?.IsSuccess == true ? "Order completed" : resp?.Message ?? "Failed";
+            return RedirectToAction(nameof(OrderDetail), new { orderId });
+        }
+
+        [Authorize(Roles = SD.RoleAdmin)]
+        [HttpPost]
+        public async Task<IActionResult> CancelOrder(int orderId)
+        {
+            var resp = await _orderService.UpdateOrderStatus(orderId, SD.Status_Cancelled);
+            TempData[resp != null && resp.IsSuccess ? "success" : "error"] = resp?.IsSuccess == true ? "Order cancelled" : resp?.Message ?? "Failed";
+            return RedirectToAction(nameof(OrderDetail), new { orderId });
+        }
     }
 }

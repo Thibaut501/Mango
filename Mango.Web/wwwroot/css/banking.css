@@ -1,0 +1,6 @@
+:root{--bk-bg-start:#f6f9ff;--bk-bg-end:#ffffff;--bk-muted:#6c757d}
+.banking-shell{background:linear-gradient(180deg,var(--bk-bg-start) 0%,var(--bk-bg-end) 100%);border-radius:12px;padding:1.25rem 1.25rem;box-shadow:0 12px 24px rgba(0,0,0,.04);min-height:60vh}
+.banking-shell .titlebar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.banking-shell .subtitle{color:var(--bk-muted);font-size:.95rem}
+.table-rounded{background:#fff;border-radius:10px;overflow:hidden}
+.table-rounded thead th{background:#f1f4f9}

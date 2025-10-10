@@ -1,16 +1,17 @@
-﻿﻿
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Mango.Web</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
-    <link rel="stylesheet" href="//cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.css" />
     <link rel="stylesheet" href="~/Mango.Web.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.4/font/bootstrap-icons.css">
+    @await RenderSectionAsync("Styles", required: false)
+
+    <!-- hCaptcha API was causing NetworkError in debugger and is not used anywhere; removed. -->
 </head>
 <body>
     <header>
@@ -39,6 +40,32 @@
                                 <li><hr class="dropdown-divider"></li>
                             </ul>
                         </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="clientsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Clients
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="clientsDropdown">
+                                <li><a class="dropdown-item" asp-controller="Client" asp-action="Index">Client List</a></li>
+                                <li><a class="dropdown-item" asp-controller="Client" asp-action="Segments">Segments</a></li>
+                            </ul>
+                        </li>
+                        @if (User.IsInRole("ADMIN"))
+                        {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="bankingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Banking
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="bankingDropdown">
+                                <li><a class="dropdown-item" asp-page="/Banking/Payments">Payments</a></li>
+                                <li><a class="dropdown-item" asp-page="/Banking/Transfers">Transfers</a></li>
+                                <li><a class="dropdown-item" asp-page="/Banking/PurchaseOrders">Purchase Orders</a></li>
+                                <li><a class="dropdown-item" asp-page="/Banking/Vendors">Vendors / Suppliers</a></li>
+                                <li><a class="dropdown-item" asp-page="/Banking/Expenses">Expenses</a></li>
+                                <li><a class="dropdown-item" asp-page="/Banking/Reconciliation">Reconciliation / Audit</a></li>
+                                <li><a class="dropdown-item" asp-page="/Banking/Receipts">Receipts</a></li>
+                            </ul>
+                        </li>
+                        }
                         <li class="nav-item">
                             <a class="nav-link " asp-area="" asp-controller="Order" asp-action="OrderIndex">
                                 Manage Order
@@ -83,12 +110,25 @@
 
     <footer class="footer text-muted">
         <div class="text-center">
-            Made with <i class="bi bi-heart-fill "></i> by DotNetMastery
+            Made with <i class="bi bi-heart-fill "></i> by Thibaut Fabrice Joey
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="//cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+    <script>
+        // Default toastr options
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            timeOut: 3000,
+            extendedTimeOut: 1500,
+            positionClass: 'toast-top-right',
+            newestOnTop: true
+        };
+    </script>
+
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+</html>

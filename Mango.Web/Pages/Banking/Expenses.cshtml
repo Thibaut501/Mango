@@ -1,0 +1,37 @@
+@page
+@model Mango.Web.Pages.Banking.ExpensesModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles="ADMIN")]
+@section Styles { <link rel="stylesheet" href="~/css/banking.css" asp-append-version="true" /> }
+<div class="banking-shell">
+    <div class="titlebar">
+        <div>
+            <h2 class="mb-0">Expenses</h2>
+            <div class="subtitle">Log non-purchase costs</div>
+        </div>
+        <form method="get" class="d-flex gap-2">
+            <select name="category" class="form-select">
+                <option value="">All</option>
+                @foreach(var c in Model.DistinctCategories){
+                    <option value="@c" selected="@(string.Equals(Model.SelectedCategory, c, System.StringComparison.OrdinalIgnoreCase)?"selected":null)">@c</option>
+                }
+            </select>
+            <button class="btn btn-outline-secondary">Filter</button>
+        </form>
+    </div>
+
+    <div class="table-responsive table-rounded">
+        <table class="table table-striped align-middle mb-0">
+            <thead><tr><th>Date</th><th>Category</th><th>Description</th><th class="text-end">Amount</th></tr></thead>
+            <tbody>
+            @foreach(var e in Model.Items){
+                <tr>
+                    <td>@e.Date.ToLocalTime().ToString("g")</td>
+                    <td>@e.Category</td>
+                    <td>@e.Description</td>
+                    <td class="text-end">@e.Amount.ToString("C")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
